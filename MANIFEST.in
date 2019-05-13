@@ -1,0 +1,10 @@
+include README.md
+include LICENSE
+include setup.py
+graft darkdetect
+
+# Patterns to exclude from any directory
+global-exclude *~
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude .git
