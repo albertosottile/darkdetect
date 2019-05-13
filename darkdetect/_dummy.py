@@ -5,10 +5,10 @@
 #-----------------------------------------------------------------------------
 
 def theme():
-    return 'Light'
+    return None
         
 def isDark():
-    return theme() == 'Dark'
+    return None
     
 def isLight():
-    return theme() == 'Light'
+    return None
