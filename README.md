@@ -30,5 +30,5 @@ Alternatively, you are free to vendor directly a copy of Darkdetect in your app.
 ## Notes
 
 - This software is licensed under the terms of the 3-clause BSD License.
-- This package is designed to work also with older versions of macOS and in those cases it will return always 'Light'. Detection of the dark menu bar and dock (available from 10.10) is not supported.
+- This package can be installed on any operative system, but it will always return `None` unless executed on macOS 10.14 Mojave. This package is designed to work also with older versions of macOS and in those cases it will also return `None`. Detection of the dark menu bar and dock (available from 10.10) is not supported.
 - [Details](https://stackoverflow.com/questions/25207077/how-to-detect-if-os-x-is-in-dark-mode) on the detection method used.
