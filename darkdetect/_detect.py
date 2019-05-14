@@ -31,34 +31,34 @@ def n(name):
 def C(classname):
     return objc.objc_getClass(_utf8(classname))
 
-def theme():  
+def theme():
     NSAutoreleasePool = objc.objc_getClass('NSAutoreleasePool')
     pool = msg(NSAutoreleasePool, n('alloc'))
     pool = msg(pool, n('init'))
-    
+
     NSUserDefaults = C('NSUserDefaults')
     stdUserDef = msg(NSUserDefaults, n('standardUserDefaults'))
-    
+
     NSString = C('NSString')
-    
+
     key = msg(NSString, n("stringWithUTF8String:"), _utf8('AppleInterfaceStyle'))
     appearanceNS = msg(stdUserDef, n('stringForKey:'), void_p(key))
     appearanceC = msg(appearanceNS, n('UTF8String'))
-    
+
     if appearanceC is not None:
         out = ctypes.string_at(appearanceC)
     else:
         out = None
-    
+
     msg(pool, n('release'))
-    
+
     if out is not None:
         return out.decode('utf-8')
     else:
         return 'Light'
-        
+
 def isDark():
     return theme() == 'Dark'
-    
+
 def isLight():
     return theme() == 'Light'
