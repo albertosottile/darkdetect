@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-#  Copyright (C) 2019 Alberto Sottile
+#  Copyright (C) 2019 Alberto Sottile, Eric Larson
 #
 #  Distributed under the terms of the 3-clause BSD License.
 #-----------------------------------------------------------------------------
@@ -15,7 +15,7 @@ def theme():
              'gtk-theme'], capture_output=True)
         theme = proc.stdout.decode().strip().strip("'")
     except Exception:
-        return None
+        return 'Light'
     else:
         if theme.endswith('-dark'):
             return 'Dark'
@@ -23,15 +23,7 @@ def theme():
             return 'Light'
 
 def isDark():
-    got = theme()
-    if got is None:
-        return None
-    else:
-        return theme() == 'Dark'
+    return theme() == 'Dark'
 
 def isLight():
-    got = theme()
-    if got is None:
-        return None
-    else:
-        return theme() == 'Light'
+    return theme() == 'Light'
