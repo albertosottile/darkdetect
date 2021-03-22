@@ -4,16 +4,18 @@
 #  Distributed under the terms of the 3-clause BSD License.
 #-----------------------------------------------------------------------------
 
-import subprocess
+from ctypes import util, cdll, c_char_p, byref
 
 
 def theme():
     # Here we just triage to GTK settings for now
     try:
-        proc = subprocess.run(
-            ['gsettings', 'get', 'org.gnome.desktop.interface',
-             'gtk-theme'], capture_output=True)
-        theme = proc.stdout.decode().strip().strip("'")
+        gtklib = cdll.LoadLibrary(util.find_library('gtk-3'))
+        gtklib.gtk_init(None, None)
+        settings = gtklib.gtk_settings_get_default()
+        res = c_char_p()
+        gtklib.g_object_get(settings, b"gtk-theme-name", byref(res), 0)
+        theme = res.value.decode()
     except Exception:
         return 'Light'
     else:
