@@ -18,7 +18,7 @@ setup_args = dict(
     author_email = "asottile@gmail.com",
     url = 'http://github.com/albertosottile/darkdetect',
     download_url = 'http://github.com/albertosottile/darkdetect/releases',
-    description = "Detect macOS Mojave Dark Mode from Python",
+    description = "Detect OS Dark Mode from Python",
     long_description=read('README.md'),
     long_description_content_type="text/markdown",
     license = "BSD",
@@ -35,7 +35,9 @@ setup_args = dict(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',                
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
     ],
 )
 
