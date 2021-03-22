@@ -24,6 +24,8 @@ elif sys.platform == "win32" and platform.release() == "10":
         from ._windows_detect import *
     else:
         from ._dummy import *
+elif sys.platform == "linux":
+    from ._linux_detect import *
 else:
     from ._dummy import *
 
