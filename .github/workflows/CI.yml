@@ -46,12 +46,7 @@ jobs:
         with:
           python-version: '3.8'
 
-      - name: Setup dependencies
-        run: |
-          sudo apt-get install xvfb
-
       - name: Test
-        run: |
-          export DISPLAY=:99
-          Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
-          python3 -c "import darkdetect; print(darkdetect.theme())"
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          run: python3 -c "import darkdetect; print(darkdetect.theme())"
