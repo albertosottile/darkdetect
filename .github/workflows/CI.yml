@@ -1,0 +1,51 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  macos:
+    name: Test on macOS
+    runs-on: macos-10.15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Test
+        run: |
+          python3 -c "import darkdetect; print(darkdetect.theme())"
+
+  windows:
+    name: Test on Windows
+    runs-on: windows-2019
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Test
+        run: |
+          python -c "import darkdetect; print(darkdetect.theme())"
+
+  linux:
+    name: Test on Ubuntu
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Test
+        run: |
+          python3 -c "import darkdetect; print(darkdetect.theme())"
