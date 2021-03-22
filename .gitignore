@@ -8,4 +8,6 @@ venv
 .*
 !.travis.yml
 !.appveyor.yml
+!.github
 __pycache__
+
