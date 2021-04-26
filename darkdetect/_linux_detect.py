@@ -9,11 +9,15 @@ import subprocess
 
 def theme():
     # Here we just triage to GTK settings for now
-    out = subprocess.Popen(
-        ['gsettings', 'get', 'org.gnome.desktop.interface', 'gtk-theme'],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    stdout, _ = out.communicate()
-    theme = stdout.lower().decode().strip()[1:-1]  # remove start and end quote
+    try:
+        out = subprocess.run(
+            ['gsettings', 'get', 'org.gnome.desktop.interface', 'gtk-theme'],
+            capture_output=True)
+        stdout = out.stdout.decode()
+    except Exception:
+        return 'Light'
+    # we have a string, now remove start and end quote
+    theme = stdout.lower().strip()[1:-1]
     if theme.endswith('-dark'):
         return 'Dark'
     else:
