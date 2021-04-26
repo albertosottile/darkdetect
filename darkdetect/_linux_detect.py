@@ -4,25 +4,24 @@
 #  Distributed under the terms of the 3-clause BSD License.
 #-----------------------------------------------------------------------------
 
-from ctypes import util, cdll, c_char_p, byref
+import subprocess
 
 
 def theme():
     # Here we just triage to GTK settings for now
     try:
-        gtklib = cdll.LoadLibrary(util.find_library('gtk-3'))
-        gtklib.gtk_init(None, None)
-        settings = gtklib.gtk_settings_get_default()
-        res = c_char_p()
-        gtklib.g_object_get(settings, b"gtk-theme-name", byref(res), 0)
-        theme = res.value.decode()
+        out = subprocess.run(
+            ['gsettings', 'get', 'org.gnome.desktop.interface', 'gtk-theme'],
+            capture_output=True)
+        stdout = out.stdout.decode()
     except Exception:
         return 'Light'
+    # we have a string, now remove start and end quote
+    theme = stdout.lower().strip()[1:-1]
+    if theme.endswith('-dark'):
+        return 'Dark'
     else:
-        if theme.endswith('-dark'):
-            return 'Dark'
-        else:
-            return 'Light'
+        return 'Light'
 
 def isDark():
     return theme() == 'Dark'
