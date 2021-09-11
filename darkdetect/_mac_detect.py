@@ -6,9 +6,17 @@
 
 import ctypes
 import ctypes.util
+import platform
 
-appkit = ctypes.cdll.LoadLibrary(ctypes.util.find_library('AppKit'))
-objc = ctypes.cdll.LoadLibrary(ctypes.util.find_library('objc'))
+from distutils.version import LooseVersion as V
+
+if V(platform.mac_ver()[0]) < V("10.16"):
+    appkit = ctypes.cdll.LoadLibrary(ctypes.util.find_library('AppKit'))
+    objc = ctypes.cdll.LoadLibrary(ctypes.util.find_library('objc'))
+else:
+    appkit = ctypes.cdll.LoadLibrary('AppKit.framework/AppKit')
+    objc = ctypes.cdll.LoadLibrary('libobjc.dylib')
+del V
 
 void_p = ctypes.c_void_p
 ull = ctypes.c_uint64
