@@ -10,7 +10,7 @@ import platform
 
 from distutils.version import LooseVersion as V
 
-if V(platform.mac_ver()[0]) < V("10.16"):
+if V(platform.mac_ver()[0]) < V("10.16") or platform.python_version_tuple()[0] == '2':
     appkit = ctypes.cdll.LoadLibrary(ctypes.util.find_library('AppKit'))
     objc = ctypes.cdll.LoadLibrary(ctypes.util.find_library('objc'))
 else:
