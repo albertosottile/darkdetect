@@ -23,10 +23,10 @@ ull = ctypes.c_uint64
 
 objc.objc_getClass.restype = void_p
 objc.sel_registerName.restype = void_p
-objc.objc_msgSend.restype = void_p
-objc.objc_msgSend.argtypes = [void_p, void_p]
 
-msg = objc.objc_msgSend
+# See https://docs.python.org/3/library/ctypes.html#function-prototypes for arguments description
+MSGPROTOTYPE = ctypes.CFUNCTYPE(void_p, void_p, void_p, void_p)
+msg = MSGPROTOTYPE(('objc_msgSend', objc), ((1 ,'', None), (1, '', None), (1, '', None)))
 
 def _utf8(s):
     if not isinstance(s, bytes):
