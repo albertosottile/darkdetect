@@ -27,6 +27,8 @@ setup_args = dict(
     classifiers = [
         'License :: OSI Approved :: BSD License',
         'Operating System :: MacOS :: MacOS X',
+        'Operating System :: Microsoft :: Windows :: Windows 10',
+        'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
