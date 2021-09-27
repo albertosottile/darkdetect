@@ -14,8 +14,8 @@ if V(platform.mac_ver()[0]) < V("10.16") or platform.python_version_tuple()[0] =
     appkit = ctypes.cdll.LoadLibrary(ctypes.util.find_library('AppKit'))
     objc = ctypes.cdll.LoadLibrary(ctypes.util.find_library('objc'))
 else:
-    appkit = ctypes.cdll.LoadLibrary('AppKit.framework/AppKit')
-    objc = ctypes.cdll.LoadLibrary('libobjc.dylib')
+    appkit = ctypes.cdll.LoadLibrary('/System/Library/Frameworks/AppKit.framework/AppKit')
+    objc = ctypes.cdll.LoadLibrary('/usr/lib/libobjc.dylib')
 del V
 
 void_p = ctypes.c_void_p
