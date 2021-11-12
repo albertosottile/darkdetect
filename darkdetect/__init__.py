@@ -19,7 +19,7 @@ if sys.platform == "darwin":
 elif sys.platform == "win32" and int(platform.release()) >= 10:
     # Checks if running Windows 10 version 10.0.14393 (Anniversary Update) OR HIGHER. The getwindowsversion method returns a tuple.
     # The third item is the build number that we can use to check if the user has a new enough version of Windows.
-    winver = int(sys.getwindowsversion()[2])
+    winver = int(platform.version().split('.')[2])
     if winver >= 14393:
         from ._windows_detect import *
     else:
