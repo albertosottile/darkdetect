@@ -18,7 +18,7 @@ def theme():
         return 'Light'
     # we have a string, now remove start and end quote
     theme = stdout.lower().strip()[1:-1]
-    if theme.endswith('-dark'):
+    if 'dark' in theme.lower():
         return 'Dark'
     else:
         return 'Light'
