@@ -5,7 +5,7 @@
 #-----------------------------------------------------------------------------
 
 import subprocess
-
+import typing
 
 def theme():
     # Here we just triage to GTK settings for now
@@ -28,3 +28,6 @@ def isDark():
 
 def isLight():
     return theme() == 'Light'
+
+def listener(callback: typing.Callable[[str], None]) -> None:
+    raise NotImplementedError()

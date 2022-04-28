@@ -1,0 +1,3 @@
+import typing
+
+def listener(callback: typing.Callable[[str], None]) -> None: ...

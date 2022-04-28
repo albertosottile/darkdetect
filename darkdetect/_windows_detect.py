@@ -1,4 +1,10 @@
 from winreg import HKEY_CURRENT_USER as hkey, QueryValueEx as getSubkeyValue, OpenKey as getKey
+import typing
+try:
+    from ._windows_native import listener
+except ImportError:
+    def listener(callback: typing.Callable[[str], None]) -> None:
+        raise NotImplementedError()
 
 def theme():
     """ Uses the Windows Registry to detect if the user is using Dark Mode """
