@@ -4,21 +4,12 @@
 #  Distributed under the terms of the 3-clause BSD License.
 #-----------------------------------------------------------------------------
 
-import platform
 import setuptools
 from darkdetect import __version__ as ddVersion
 
 def read(fname):
     with open(fname, 'r') as f:
         return f.read()
-
-system = platform.system()
-if system == 'Windows':
-    ext_modules = [
-        setuptools.Extension('darkdetect._windows_native', ['darkdetect/_windows_native.c'])
-    ]
-else:
-    ext_modules = []
 
 setup_args = dict(
     name = "darkdetect",
@@ -33,7 +24,6 @@ setup_args = dict(
     license = "BSD",
     include_package_data=True,
     packages=setuptools.find_packages(),
-    ext_modules=ext_modules,
     classifiers = [
         'License :: OSI Approved :: BSD License',
         'Operating System :: MacOS :: MacOS X',
