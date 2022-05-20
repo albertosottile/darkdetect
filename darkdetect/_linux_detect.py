@@ -30,4 +30,10 @@ def isLight():
     return theme() == 'Light'
 
 def listener(callback: typing.Callable[[str], None]) -> None:
-    raise NotImplementedError()
+    with subprocess.Popen(
+        ('gsettings', 'monitor', 'org.gnome.desktop.interface', 'gtk-theme'),
+        stdout=subprocess.PIPE,
+        universal_newlines=True,
+    ) as p:
+        for line in p.stdout:
+            callback('Dark' if line.strip().removeprefix("gtk-theme: '").removesuffix("'").endswith('-dark') else 'Light')
