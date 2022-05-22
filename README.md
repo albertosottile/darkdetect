@@ -25,6 +25,21 @@ False
 ```
 It's that easy.
 
+You can create a dark mode switch listener daemon thread with `darkdetect.listener` and pass a callback function. The function will be called with string "Dark" or "Light" when the OS switches the dark mode setting.
+
+``` python
+import threading
+import darkdetect
+
+# def listener(callback: typing.Callable[[str], None]) -> None: ...
+
+t = threading.Thread(target=darkdetect.listener, args=(print,))
+t.daemon = True
+t.start()
+```
+
+*On macOS it simply raises a NotImplementedError. PRs in this direction are more than welcome.*
+
 ## Install
 
 The preferred channel is PyPI:
