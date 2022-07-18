@@ -24,6 +24,7 @@ setup_args = dict(
     license = "BSD",
     include_package_data=True,
     packages=setuptools.find_packages(),
+    options={'bdist_wheel':{'universal':'1'}},
     classifiers = [
         'License :: OSI Approved :: BSD License',
         'Operating System :: MacOS :: MacOS X',
