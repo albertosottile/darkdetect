@@ -4,6 +4,8 @@
 #  Distributed under the terms of the 3-clause BSD License.
 #-----------------------------------------------------------------------------
 
+import time
+
 import ctypes
 import ctypes.util
 
@@ -71,4 +73,12 @@ def isLight():
 
 #def listener(callback: typing.Callable[[str], None]) -> None:
 def listener(callback):
-    raise NotImplementedError()
+    # This is a very naive approach
+    delay = 0.05
+    old = theme()
+    while True:
+        new = theme()
+        if new != old:
+            old = new
+            callback(new)
+        time.sleep(delay)
