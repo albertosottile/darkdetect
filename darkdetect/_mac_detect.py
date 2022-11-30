@@ -72,9 +72,14 @@ def isLight():
     return theme() == 'Light'
 
 #def listener(callback: typing.Callable[[str], None]) -> None:
-def listener(callback):
+def listener(callback, *, delay = 0.05):
+    """
+    A naive listener for macOS
+    :param callback: When the theme changes, callback(theme()) is invoked
+    :param delay: The number of seconds to between checking if the theme changed
+    :return: None
+    """
     # This is a very naive approach
-    delay = 0.05
     old = theme()
     while True:
         new = theme()
