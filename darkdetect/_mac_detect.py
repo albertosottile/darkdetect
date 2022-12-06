@@ -8,6 +8,13 @@ import ctypes
 import ctypes.util
 
 try:
+    from Foundation import NSDistributedNotificationCenter, NSObject
+    from PyObjCTools import AppHelper  # What we really need
+    _can_listen = True
+except ModuleNotFoundError:
+    _can_listen = False
+
+try:
     # macOS Big Sur+ use "a built-in dynamic linker cache of all system-provided libraries"
     appkit = ctypes.cdll.LoadLibrary('AppKit.framework/AppKit')
     objc = ctypes.cdll.LoadLibrary('libobjc.dylib')
@@ -69,6 +76,26 @@ def isDark():
 def isLight():
     return theme() == 'Light'
 
-#def listener(callback: typing.Callable[[str], None]) -> None:
-def listener(callback):
-    raise NotImplementedError()
+
+#def listener(callback: typing.Callable[[str], None], start_event_loop: Optional[bool], max_timeout: Optional[int]) -> None:
+def listener(callback, start_event_loop = True, max_timeout = 3):
+    if not _can_listen:
+        raise NotImplementedError()
+
+    # Wrap the callback
+    class Observer(NSObject):
+        def callback_(self, _):
+            callback(theme())
+
+    # Register an observer
+    observer = Observer.new()  # Keep a reference of the observer to keep it alive
+    NSDistributedNotificationCenter.defaultCenter().addObserver_selector_name_object_(
+        observer,  # Observer must be kept alive by a different reference
+        "callback:",
+        "AppleInterfaceThemeChangedNotification",
+        None
+    )
+
+    # Start the event loop
+    if start_event_loop:
+        AppHelper.runConsoleEventLoop(installInterrupt=True, maxTimeout=max_timeout)
