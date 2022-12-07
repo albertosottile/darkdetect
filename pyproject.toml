@@ -45,6 +45,3 @@ attr = "darkdetect.__version__"
 
 [tool.setuptools.packages.find]
 namespaces = false
-
-[tool.distutils.bdist_wheel]
-universal = true
