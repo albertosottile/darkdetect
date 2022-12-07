@@ -35,7 +35,7 @@ homepage = "http://github.com/albertosottile/darkdetect"
 download = "http://github.com/albertosottile/darkdetect/releases"
 
 [project.optional-dependencies]
-mac_listener = [ "pyobjc-framework-Cocoa; platform_system == 'Darwin'" ]
+macos-listener = [ "pyobjc-framework-Cocoa; platform_system == 'Darwin'" ]
 
 # Tool Config
 

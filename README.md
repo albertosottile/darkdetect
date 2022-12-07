@@ -49,6 +49,13 @@ pip install darkdetect
 
 Alternatively, you are free to vendor directly a copy of Darkdetect in your app. Further information on vendoring can be found [here](https://medium.com/underdog-io-engineering/vendoring-python-dependencies-with-pip-b9eb6078b9c0).
 
+## Optional Installs
+
+To enable the macOS listener, additional components are required, these can be installed via:
+```bash
+pip install -e darkdetect[macos-listener]
+```
+
 ## Notes
 
 - This software is licensed under the terms of the 3-clause BSD License.

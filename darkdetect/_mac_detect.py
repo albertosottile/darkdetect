@@ -22,9 +22,11 @@ except ModuleNotFoundError:
 
 try:
     # macOS Big Sur+ use "a built-in dynamic linker cache of all system-provided libraries"
+    appkit = ctypes.cdll.LoadLibrary('AppKit.framework/AppKit')
     objc = ctypes.cdll.LoadLibrary('libobjc.dylib')
 except OSError:
     # revert to full path for older OS versions and hardened programs
+    appkit = ctypes.cdll.LoadLibrary(ctypes.util.find_library('AppKit'))
     objc = ctypes.cdll.LoadLibrary(ctypes.util.find_library('objc'))
 
 void_p = ctypes.c_void_p
@@ -104,14 +106,13 @@ def _listen_child():
 def listener(callback: Callable[[str], None]) -> None:
     if not _can_listen:
         raise NotImplementedError()
-    pth = f"import sys; sys.path.insert(0, r'''{Path(__file__).parents[1]}''')"
     sig = "import signal as s; s.signal(s.SIGINT, s.SIG_IGN)"
     listen = "import darkdetect as dd; dd._mac_detect._listen_child()"
     with subprocess.Popen(
-        (sys.executable, "-c", f"{pth}; {sig}; {listen}"),
+        (sys.executable, "-c", f"{sig}; {listen}"),
         stdout=subprocess.PIPE,
-        # stderr=subprocess.DEVNULL,
         universal_newlines=True,
+        cwd=Path(__file__).parents[1],
     ) as p:
         for line in p.stdout:
             callback(line.strip())
