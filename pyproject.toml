@@ -1,3 +1,47 @@
 [build-system]
-requires = ["setuptools>=46.4.0"]
+requires = ["setuptools>=61.2"]
 build-backend = "setuptools.build_meta"
+
+# Project Config
+
+[project]
+name = "darkdetect"
+description = "Detect OS Dark Mode from Python"
+readme = "README.md"
+requires-python = ">=3"
+dynamic = [ "version" ]
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+]
+
+[project.license]
+text = "BSD-3-Clause"
+
+[[project.authors]]
+name = "Alberto Sottile"
+email = "asottile@gmail.com"
+
+[project.urls]
+homepage = "http://github.com/albertosottile/darkdetect"
+download = "http://github.com/albertosottile/darkdetect/releases"
+
+# Tool Config
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.dynamic.version]
+attr = "darkdetect.__version__"
+
+[tool.distutils.bdist_wheel]
+universal = true
