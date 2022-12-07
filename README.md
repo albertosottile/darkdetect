@@ -53,7 +53,7 @@ Alternatively, you are free to vendor directly a copy of Darkdetect in your app.
 
 To enable the macOS listener, additional components are required, these can be installed via:
 ```bash
-pip install -e darkdetect[macos-listener]
+pip install darkdetect[macos-listener]
 ```
 
 ## Notes

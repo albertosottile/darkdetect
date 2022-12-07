@@ -107,12 +107,12 @@ def listener(callback: Callable[[str], None]) -> None:
     if not _can_listen:
         raise NotImplementedError()
     sig = "import signal as s; s.signal(s.SIGINT, s.SIG_IGN)"
-    listen = "import darkdetect as dd; dd._mac_detect._listen_child()"
+    listen = "import _mac_detect as m; m._listen_child()"
     with subprocess.Popen(
         (sys.executable, "-c", f"{sig}; {listen}"),
         stdout=subprocess.PIPE,
         universal_newlines=True,
-        cwd=Path(__file__).parents[1],
+        cwd=Path(__file__).parent,
     ) as p:
         for line in p.stdout:
             callback(line.strip())
