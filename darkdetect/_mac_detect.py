@@ -8,7 +8,6 @@ import ctypes
 import ctypes.util
 import subprocess
 import sys
-import os
 from pathlib import Path
 from typing import Callable
 
