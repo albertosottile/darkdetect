@@ -8,6 +8,7 @@ import ctypes
 import ctypes.util
 import subprocess
 import sys
+import os
 from pathlib import Path
 from typing import Callable
 
@@ -86,7 +87,10 @@ def _listen_child():
     """
     class Observer(NSObject):
         def callback_(self, _):
-            print(theme(), flush=True)
+            try:
+                print(theme(), flush=True)
+            except IOError:
+                os._exit(1)
     observer = Observer.new()  # Keep a reference of the observer to keep it alive
     NSDistributedNotificationCenter.defaultCenter().addObserver_selector_name_object_(
         observer,  # Observer must be kept alive by a different reference
@@ -101,10 +105,12 @@ def listener(callback: Callable[[str], None]) -> None:
     if not _can_listen:
         raise NotImplementedError()
     pth = f"import sys; sys.path.insert(0, r'''{Path(__file__).parents[1]}''')"
+    sig = "import signal as s; s.signal(s.SIGINT, s.SIG_IGN)"
     listen = "import darkdetect as dd; dd._mac_detect._listen_child()"
     with subprocess.Popen(
-        (sys.executable, "-c", f"{pth}; {listen}"),
+        (sys.executable, "-c", f"{pth}; {sig}; {listen}"),
         stdout=subprocess.PIPE,
+        # stderr=subprocess.DEVNULL,
         universal_newlines=True,
     ) as p:
         for line in p.stdout:
