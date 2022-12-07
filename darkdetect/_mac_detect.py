@@ -6,10 +6,10 @@
 
 import ctypes
 import ctypes.util
-
-from multiprocessing import Process, Queue
-from typing import Callable, Optional
-import queue
+import subprocess
+import sys
+from pathlib import Path
+from typing import Callable
 
 try:
     from Foundation import NSDistributedNotificationCenter, NSObject
@@ -80,60 +80,32 @@ def isLight():
     return theme() == 'Light'
 
 
-class MPListener:
+def _listen_child():
     """
-    A theme change listener for macOS which can run in the non-main thread
+    Run by a child process, install an observer and print theme on change
     """
-
-    def __init__(self):
-        self._q: Optional[Queue] = None
-        self._proc: Optional[Process] = None
-
-    def listen(self, callback: Callable[[str], None]):
-        """
-        Listen for theme changes, call callback(theme) on change
-        """
-        if self._q is not None:
-            raise RuntimeError("Do not call listen twice")
-        self._q = Queue(maxsize=0)
-        # Listen
-        self._proc = Process(target=self._listen_child, args=(self._q,), daemon=True)
-        self._proc.start()
-        try:
-            while self._proc.is_alive():
-                callback(self._q.get())
-        except queue.Empty:
-            pass
-
-    def wait(self):
-        """
-        Kill and join the listener; a no-op if no process if the listener is not running
-        """
-        if self._q is not None:
-            self._proc.kill()
-            self._q.close()
-            self._q.join_thread()
-
-    @staticmethod
-    def _listen_child(q: Queue):
-        """
-        Run by a child process, install an observer and forward messages to the queue
-        """
-        class Observer(NSObject):
-            def callback_(self, _):
-                q.put_nowait(theme())
-        observer = Observer.new()  # Keep a reference of the observer to keep it alive
-        NSDistributedNotificationCenter.defaultCenter().addObserver_selector_name_object_(
-            observer,  # Observer must be kept alive by a different reference
-            "callback:",
-            "AppleInterfaceThemeChangedNotification",
-            None
-        )
-        AppHelper.runConsoleEventLoop()
+    class Observer(NSObject):
+        def callback_(self, _):
+            print(theme(), flush=True)
+    observer = Observer.new()  # Keep a reference of the observer to keep it alive
+    NSDistributedNotificationCenter.defaultCenter().addObserver_selector_name_object_(
+        observer,  # Observer must be kept alive by a different reference
+        "callback:",
+        "AppleInterfaceThemeChangedNotification",
+        None
+    )
+    AppHelper.runConsoleEventLoop()
 
 
-#def listener(callback: typing.Callable[[str], None]) -> None:
-def listener(callback):
+def listener(callback: Callable[[str], None]) -> None:
     if not _can_listen:
         raise NotImplementedError()
-    MPListener().listen(callback)
+    pth = f"import sys; sys.path.insert(0, r'''{Path(__file__).parents[1]}''')"
+    listen = "import darkdetect as dd; dd._mac_detect._listen_child()"
+    with subprocess.Popen(
+        (sys.executable, "-c", f"{pth}; {listen}"),
+        stdout=subprocess.PIPE,
+        universal_newlines=True,
+    ) as p:
+        for line in p.stdout:
+            callback(line.strip())
