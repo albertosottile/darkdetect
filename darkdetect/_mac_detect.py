@@ -134,4 +134,6 @@ class MPListener:
 
 #def listener(callback: typing.Callable[[str], None]) -> None:
 def listener(callback):
+    if not _can_listen:
+        raise NotImplementedError()
     MPListener().listen(callback)
