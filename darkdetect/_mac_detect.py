@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Callable
 
 try:
-    from Foundation import NSDistributedNotificationCenter, NSObject
+    from Foundation import NSObject, NSKeyValueObservingOptionNew, NSKeyValueChangeNewKey, NSUserDefaults
     from PyObjCTools import AppHelper
     _can_listen = True
 except ModuleNotFoundError:
@@ -87,20 +87,22 @@ def _listen_child():
     """
     Run by a child process, install an observer and print theme on change
     """
+    OBSERVED_KEY = "AppleInterfaceStyle"
+
     class Observer(NSObject):
-        def callback_(self, _):
-            try:
-                print(theme(), flush=True)
-            except IOError:
-                os._exit(1)
-    observer = Observer.new()  # Keep a reference of the observer to keep it alive
-    NSDistributedNotificationCenter.defaultCenter().addObserver_selector_name_object_(
-        observer,  # Observer must be kept alive by a different reference
-        "callback:",
-        "AppleInterfaceThemeChangedNotification",
-        None
+        def observeValueForKeyPath_ofObject_change_context_(
+            self, path, object, changeDescription, context
+        ):
+            result = changeDescription[NSKeyValueChangeNewKey]
+            print(f"{'Light' if result is None else result}", flush=True)
+
+    observer = Observer.new()  # Keep a reference alive after installing
+    defaults = NSUserDefaults.standardUserDefaults()
+    defaults.addObserver_forKeyPath_options_context_(
+        observer, OBSERVED_KEY, NSKeyValueObservingOptionNew, 0
     )
-    AppHelper.runConsoleEventLoop()
+
+    AppHelper.runConsoleEventLoop(installInterrupt=True)
 
 
 def listener(callback: Callable[[str], None]) -> None:
