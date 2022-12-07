@@ -8,6 +8,7 @@ import ctypes
 import ctypes.util
 import subprocess
 import sys
+import os
 from pathlib import Path
 from typing import Callable
 
@@ -86,6 +87,9 @@ def _listen_child():
     """
     Run by a child process, install an observer and print theme on change
     """
+    import signal
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
     OBSERVED_KEY = "AppleInterfaceStyle"
 
     class Observer(NSObject):
@@ -93,7 +97,10 @@ def _listen_child():
             self, path, object, changeDescription, context
         ):
             result = changeDescription[NSKeyValueChangeNewKey]
-            print(f"{'Light' if result is None else result}", flush=True)
+            try:
+                print(f"{'Light' if result is None else result}", flush=True)
+            except IOError:
+                os._exit(1)
 
     observer = Observer.new()  # Keep a reference alive after installing
     defaults = NSUserDefaults.standardUserDefaults()
@@ -101,16 +108,14 @@ def _listen_child():
         observer, OBSERVED_KEY, NSKeyValueObservingOptionNew, 0
     )
 
-    AppHelper.runConsoleEventLoop(installInterrupt=True)
+    AppHelper.runConsoleEventLoop()
 
 
 def listener(callback: Callable[[str], None]) -> None:
     if not _can_listen:
         raise NotImplementedError()
-    sig = "import signal as s; s.signal(s.SIGINT, s.SIG_IGN)"
-    listen = "import _mac_detect as m; m._listen_child()"
     with subprocess.Popen(
-        (sys.executable, "-c", f"{sig}; {listen}"),
+        (sys.executable, "-c", "import _mac_detect as m; m._listen_child()"),
         stdout=subprocess.PIPE,
         universal_newlines=True,
         cwd=Path(__file__).parent,
