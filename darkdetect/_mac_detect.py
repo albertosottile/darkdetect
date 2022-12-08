@@ -59,8 +59,8 @@ def theme():
     pool = msg(NSAutoreleasePool, n('alloc'))
     pool = msg(pool, n('init'))
 
-    NSUserDefaults = C('NSUserDefaults')
-    stdUserDef = msg(NSUserDefaults, n('standardUserDefaults'))
+    NSUserDefaults_ = C('NSUserDefaults')
+    stdUserDef = msg(NSUserDefaults_, n('standardUserDefaults'))
 
     NSString = C('NSString')
 
@@ -75,10 +75,7 @@ def theme():
 
     msg(pool, n('release'))
 
-    if out is not None:
-        return out.decode('utf-8')
-    else:
-        return 'Light'
+    return "Light" if out is None else out.decode('utf-8')
 
 
 class MacListener(BaseListener):
@@ -124,7 +121,7 @@ class MacListener(BaseListener):
 
         class Observer(NSObject):
             def observeValueForKeyPath_ofObject_change_context_(
-                self, path, object, changeDescription, context
+                self, path, object_, changeDescription, context
             ):
                 result = changeDescription[NSKeyValueChangeNewKey]
                 try:

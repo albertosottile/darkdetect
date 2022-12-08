@@ -10,28 +10,23 @@ __version__: str = '0.7.1'
 
 import sys
 import platform
-from typing import Callable
+from typing import Callable, Type
 
+from .base import BaseListener
+Listener: Type[BaseListener]
 
 #
 # Import correct the listener for the given OS
 #
-
 
 def macos_supported_version():
     sysver: str = platform.mac_ver()[0]  # typically 10.14.2 or 12.3
     major: int = int(sysver.split('.')[0])
     if major < 10:
         return False
-    elif major >= 11:
+    if major >= 11:
         return True
-    else:
-        minor: int = int(sysver.split('.')[1])
-        if minor < 14:
-            return False
-        else:
-            return True
-
+    return int(sysver.split('.')[1]) >= 14
 
 if sys.platform == "darwin" and macos_supported_version():
     from ._mac_detect import *
@@ -50,11 +45,9 @@ else:
     from ._dummy import *
     Listener = DummyListener
 
-
 #
 # Common shortcut functions
 #
-
 
 def isDark():
     return theme() == "Dark"
@@ -66,4 +59,4 @@ def listener(callback: Callable[[str], None]) -> None:
     Listener(callback).listen()
 
 
-del sys, platform, Callable
+del sys, platform, Callable, Type

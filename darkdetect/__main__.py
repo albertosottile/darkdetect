@@ -6,4 +6,4 @@
 
 import darkdetect
 
-print('Current theme: {}'.format(darkdetect.theme()))
+print(f"Current theme: {darkdetect.theme()}")

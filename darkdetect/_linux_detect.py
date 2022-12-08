@@ -9,27 +9,19 @@ from typing import Callable, Optional
 
 from .base import BaseListener
 
+
 def theme():
     try:
         #Using the freedesktop specifications for checking dark mode
-        out = subprocess.run(
-            ['gsettings', 'get', 'org.gnome.desktop.interface', 'color-scheme'],
-            capture_output=True)
-        stdout = out.stdout.decode()
+        stdout = subprocess.check_output(['gsettings', 'get', 'org.gnome.desktop.interface', 'color-scheme'])
         #If not found then trying older gtk-theme method
         if len(stdout)<1:
-            out = subprocess.run(
-                ['gsettings', 'get', 'org.gnome.desktop.interface', 'gtk-theme'],
-                capture_output=True)
-            stdout = out.stdout.decode()
-    except Exception:
-        return 'Light'
+            stdout = subprocess.check_output(['gsettings', 'get', 'org.gnome.desktop.interface', 'gtk-theme'])
+    except subprocess.SubprocessError:
+        return "Light"
     # we have a string, now remove start and end quote
-    theme = stdout.lower().strip()[1:-1]
-    if '-dark' in theme.lower():
-        return 'Dark'
-    else:
-        return 'Light'
+    theme_: bytes = stdout.lower().strip()[1:-1]
+    return "Dark" if b"-dark" in theme_.lower() else "Light"
 
 
 class GnomeListener(BaseListener):

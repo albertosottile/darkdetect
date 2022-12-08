@@ -32,7 +32,7 @@ class BaseListener:
         """
         if self._state == ListenerState.Listening:
             raise RuntimeError("Do not run .listen() from multiple threads concurrently")
-        elif self._state == ListenerState.Stopping:
+        if self._state == ListenerState.Stopping:
             raise RuntimeError("Call .wait() to wait for the previous listener to finish shutting down")
         self._state = ListenerState.Listening
         try:
