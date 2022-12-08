@@ -42,7 +42,7 @@ macos-listener = [ "pyobjc-framework-Cocoa; platform_system == 'Darwin'" ]
 [tool.setuptools]
 include-package-data = true
 
-[tool.setuptools.package_data]
+[tool.setuptools.package-data]
 darkdetect = ["py.typed"]
 
 [tool.setuptools.dynamic.version]
