@@ -5,6 +5,9 @@
 #-----------------------------------------------------------------------------
 
 import subprocess
+from typing import Callable, Optional
+
+from .base import BaseListener
 
 def theme():
     try:
@@ -28,18 +31,31 @@ def theme():
     else:
         return 'Light'
 
-def isDark():
-    return theme() == 'Dark'
 
-def isLight():
-    return theme() == 'Light'
+class GnomeListener(BaseListener):
+    """
+    A listener for Gnome on Linux
+    """
 
-# def listener(callback: typing.Callable[[str], None]) -> None:
-def listener(callback):
-    with subprocess.Popen(
-        ('gsettings', 'monitor', 'org.gnome.desktop.interface', 'gtk-theme'),
-        stdout=subprocess.PIPE,
-        universal_newlines=True,
-    ) as p:
-        for line in p.stdout:
-            callback('Dark' if '-dark' in line.strip().removeprefix("gtk-theme: '").removesuffix("'").lower() else 'Light')
+    def __init__(self, callback: Callable[[str], None]):
+        self._proc: Optional[subprocess.Popen] = None
+        super().__init__(callback)
+
+    def _listen(self):
+        self._proc = subprocess.Popen(
+            ('gsettings', 'monitor', 'org.gnome.desktop.interface', 'gtk-theme'),
+            stdout=subprocess.PIPE,
+            universal_newlines=True,
+        )
+        with self._proc:
+            for line in self._proc.stdout:
+                self.callback('Dark' if '-dark' in line.strip().removeprefix("gtk-theme: '").removesuffix("'").lower() else 'Light')
+
+    def _stop(self):
+        self._proc.kill()
+
+    def _wait(self):
+        self._proc.wait()
+
+
+__all__ = ("theme", "GnomeListener",)

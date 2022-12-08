@@ -7,10 +7,14 @@
 import ctypes
 import ctypes.util
 import subprocess
+import signal
 import sys
 import os
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional
+
+from .base import BaseListener
+
 
 try:
     from Foundation import NSObject, NSKeyValueObservingOptionNew, NSKeyValueChangeNewKey, NSUserDefaults
@@ -76,49 +80,65 @@ def theme():
     else:
         return 'Light'
 
-def isDark():
-    return theme() == 'Dark'
 
-def isLight():
-    return theme() == 'Light'
-
-
-def _listen_child():
+class MacListener(BaseListener):
     """
-    Run by a child process, install an observer and print theme on change
+    A listener class for macOS
     """
-    import signal
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-    OBSERVED_KEY = "AppleInterfaceStyle"
+    def __init__(self, callback: Callable[[str], None]):
+        self._proc: Optional[subprocess.Popen] = None
+        super().__init__(callback)
 
-    class Observer(NSObject):
-        def observeValueForKeyPath_ofObject_change_context_(
-            self, path, object, changeDescription, context
-        ):
-            result = changeDescription[NSKeyValueChangeNewKey]
-            try:
-                print(f"{'Light' if result is None else result}", flush=True)
-            except IOError:
-                os._exit(1)
+    # Overrides
 
-    observer = Observer.new()  # Keep a reference alive after installing
-    defaults = NSUserDefaults.standardUserDefaults()
-    defaults.addObserver_forKeyPath_options_context_(
-        observer, OBSERVED_KEY, NSKeyValueObservingOptionNew, 0
-    )
+    def _listen(self):
+        if not _can_listen:
+            raise NotImplementedError("Optional dependencies not found; fix this with: pip install darkdetect[macos-listener]")
+        self._proc = subprocess.Popen(
+                (sys.executable, "-c", "import darkdetect as d; d.MacListener._listen_child()"),
+                stdout=subprocess.PIPE,
+                universal_newlines=True,
+                cwd=Path(__file__).parents[1],
+        )
+        with self._proc:
+            for line in self._proc.stdout:
+                self.callback(line.strip())
 
-    AppHelper.runConsoleEventLoop()
+    def _stop(self):
+        self._proc.kill()
+
+    def _wait(self):
+        self._proc.wait()
+
+    # Internal Methods
+
+    @staticmethod
+    def _listen_child():
+        """
+        Run by a child process, install an observer and print theme on change
+        """
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+        OBSERVED_KEY: str = "AppleInterfaceStyle"
+
+        class Observer(NSObject):
+            def observeValueForKeyPath_ofObject_change_context_(
+                self, path, object, changeDescription, context
+            ):
+                result = changeDescription[NSKeyValueChangeNewKey]
+                try:
+                    print(f"{'Light' if result is None else result}", flush=True)
+                except IOError:
+                    os._exit(1)
+
+        observer = Observer.new()  # Keep a reference alive after installing
+        defaults = NSUserDefaults.standardUserDefaults()
+        defaults.addObserver_forKeyPath_options_context_(
+            observer, OBSERVED_KEY, NSKeyValueObservingOptionNew, 0
+        )
+
+        AppHelper.runConsoleEventLoop()
 
 
-def listener(callback: Callable[[str], None]) -> None:
-    if not _can_listen:
-        raise NotImplementedError()
-    with subprocess.Popen(
-        (sys.executable, "-c", "import _mac_detect as m; m._listen_child()"),
-        stdout=subprocess.PIPE,
-        universal_newlines=True,
-        cwd=Path(__file__).parent,
-    ) as p:
-        for line in p.stdout:
-            callback(line.strip())
+__all__ = ("theme", "MacListener")
