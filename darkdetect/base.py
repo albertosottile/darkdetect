@@ -37,6 +37,9 @@ class BaseListener:
         self._state = ListenerState.Listening
         try:
             self._listen()
+        except NotImplementedError:
+            self._state = ListenerState.Dead
+            raise
         except Exception as e:
             self.stop()  # Just in case
             raise RuntimeError("Listen failed") from e
