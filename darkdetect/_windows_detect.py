@@ -127,14 +127,8 @@ class WindowsListener(BaseListener):
                 )
                 if queryValueLast.value != queryValue.value:
                     queryValueLast.value = queryValue.value
-                    self._callback('Light' if queryValue.value else 'Dark')
-
-    def _callback(self, theme: str):
-        """
-        A small wrapper around callback, ensures future callbacks will not be made
-        """
-        if self._state == ListenerState.Listening:
-            self.callback(theme)
+                    if self._state == ListenerState.Listening:
+                        self.callback('Light' if queryValue.value else 'Dark')
 
     def _stop(self):
         pass # Override NotSupported; stop() will set the ListenerState which is what we need
