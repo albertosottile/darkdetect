@@ -117,18 +117,16 @@ listener.wait()
 
 ##### Possible GUI app shutdown sequence
 ```python
-...
-
-def shutdown():
-  listener.stop() # Initiate stop, allows callbacks to continue running
-  other_shutdown_methods() # Stop other processes
+def shutdown(self):
+  self.listener.stop() # Initiate stop, allows callbacks to continue running
+  self.other_shutdown_methods() # Stop other processes
 
   # Wait a bit longer for callbacks to complete and listener to clean up
   try:
-    listener.wait(timeout = 10)  # This app has long callbacks, shutdown should be fast though!
-  except DarkDetect.DDTimeoutError as e:
-    # Log that callbacks are still running but we are quitting anyway
-    logger.exception(e)
+    self.listener.wait(timeout = 10)  # This app has long callbacks, shutdown should be fast though!
+  except darkdetect.DDTimeoutError as e:
+    # Log that callbacks are still running but that we are quitting anyway
+    self.logger.exception(e)
 ```
 
 ##### Super simple example of wrapper `listener` function:
