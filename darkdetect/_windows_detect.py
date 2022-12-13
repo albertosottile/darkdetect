@@ -127,7 +127,14 @@ class WindowsListener(BaseListener):
                 )
                 if queryValueLast.value != queryValue.value:
                     queryValueLast.value = queryValue.value
-                    self.callback('Light' if queryValue.value else 'Dark')
+                    self._callback('Light' if queryValue.value else 'Dark')
+
+    def _callback(self, theme: str):
+        """
+        A small wrapper around callback, ensures future callbacks will not be made
+        """
+        if self._state == ListenerState.Listening:
+            self.callback(theme)
 
     def _stop(self):
         pass # Override NotSupported; stop() will set the ListenerState which is what we need
@@ -135,11 +142,12 @@ class WindowsListener(BaseListener):
 
     def _wait(self, timeout: Optional[int]):
         try:
-            if not self._lock.acquire(timeout=(-1 if timeout is None else timeout)):
-                raise DDTimeoutError(f"Timed out after {timeout} seconds.")
+            timed_out: bool = not self._lock.acquire(timeout=(-1 if timeout is None else timeout))
         except Exception:
             self._lock.release()
             raise
+        if timed_out:
+            raise DDTimeoutError(f"Timed out after {timeout} seconds.")
 
 
 __all__ = ("theme", "WindowsListener",)
