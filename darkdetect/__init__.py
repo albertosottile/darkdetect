@@ -10,9 +10,9 @@ __version__: str = '0.7.1'
 
 import sys
 import platform
-from typing import Callable, Type
+from typing import Callable, Optional, Type
 
-from .base import BaseListener
+from ._base_listener import BaseListener, DDTimeoutError
 Listener: Type[BaseListener]
 
 #
@@ -32,8 +32,6 @@ if sys.platform == "darwin" and macos_supported_version():
     from ._mac_detect import *
     Listener = MacListener
 # If running Windows 10 version 10.0.14393 (Anniversary Update) OR HIGHER.
-# The getwindowsversion method returns a tuple.
-# The third item is the build number that we can use to check if the user has a new enough version of Windows.
 elif sys.platform == "win32" and platform.release().isdigit() and int(platform.release()) >= 10 and \
         int(platform.version().split('.')[2]) >= 14393:
     from ._windows_detect import *
@@ -49,13 +47,27 @@ else:
 # Common shortcut functions
 #
 
-def isDark():
-    return theme() == "Dark"
+def isDark() -> Optional[bool]:
+    """
+    :return: True if the theme is Dark, False if not, None if there is no support for this OS
+    """
+    t: Optional[str] = theme()
+    return t if t is None else (t == "Dark")
 
-def isLight():
-    return theme() == "Light"
+
+def isLight() -> Optional[bool]:
+    """
+    :return: True if the theme is Light, False if not, None if there is no support for this OS
+    """
+    t: Optional[str] = theme()
+    return t if t is None else (t == "Light")
+
 
 def listener(callback: Callable[[str], None]) -> None:
+    """
+    Listen for a theme change, on theme change, invoke callback(theme_name)
+    :param callback: The callback to invoke
+    """
     Listener(callback).listen()
 
 

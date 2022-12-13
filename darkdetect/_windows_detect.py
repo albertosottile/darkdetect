@@ -1,9 +1,11 @@
 from winreg import HKEY_CURRENT_USER as hkey, QueryValueEx as getSubkeyValue, OpenKey as getKey
 
+import threading
 import ctypes
 import ctypes.wintypes
+from typing import Callable, Optional
 
-from .base import BaseListener
+from ._base_listener import BaseListener, ListenerState, DDTimeoutError
 
 advapi32 = ctypes.windll.advapi32
 
@@ -58,7 +60,7 @@ advapi32.RegNotifyChangeKeyValue.argtypes = (
 advapi32.RegNotifyChangeKeyValue.restype = ctypes.wintypes.LONG
 
 
-def theme():
+def theme() -> Optional[str]:
     """ Uses the Windows Registry to detect if the user is using Dark Mode """
     # Registry will return 0 if Windows is in Dark Mode and 1 if Windows is in Light Mode. This dictionary converts that output into the text that the program is expecting.
     valueMeaning = {0: "Dark", 1: "Light"}
@@ -75,6 +77,13 @@ def theme():
 
 
 class WindowsListener(BaseListener):
+    """
+    A listener class for Windows
+    """
+
+    def __init__(self, callback: Callable[[str], None]):
+        self._lock: threading.Lock
+        super().__init__(callback)
 
     def _listen(self):
         hKey = ctypes.wintypes.HKEY()
@@ -98,25 +107,39 @@ class WindowsListener(BaseListener):
             ctypes.byref(dwSize),
         )
 
-        while True:
-            advapi32.RegNotifyChangeKeyValue(
-                hKey,
-                ctypes.wintypes.BOOL(True),
-                ctypes.wintypes.DWORD(0x00000004), # REG_NOTIFY_CHANGE_LAST_SET
-                ctypes.wintypes.HANDLE(None),
-                ctypes.wintypes.BOOL(False),
-            )
-            advapi32.RegQueryValueExA(
-                hKey,
-                ctypes.wintypes.LPCSTR(b'AppsUseLightTheme'),
-                ctypes.wintypes.LPDWORD(),
-                ctypes.wintypes.LPDWORD(),
-                ctypes.cast(ctypes.byref(queryValue), ctypes.wintypes.LPBYTE),
-                ctypes.byref(dwSize),
-            )
-            if queryValueLast.value != queryValue.value:
-                queryValueLast.value = queryValue.value
-                self.callback('Light' if queryValue.value else 'Dark')
+        self._lock = threading.Lock()
+        with self._lock:
+            while self._state == ListenerState.Listening:
+                advapi32.RegNotifyChangeKeyValue(
+                    hKey,
+                    ctypes.wintypes.BOOL(True),
+                    ctypes.wintypes.DWORD(0x00000004), # REG_NOTIFY_CHANGE_LAST_SET
+                    ctypes.wintypes.HANDLE(None),
+                    ctypes.wintypes.BOOL(False),
+                )
+                advapi32.RegQueryValueExA(
+                    hKey,
+                    ctypes.wintypes.LPCSTR(b'AppsUseLightTheme'),
+                    ctypes.wintypes.LPDWORD(),
+                    ctypes.wintypes.LPDWORD(),
+                    ctypes.cast(ctypes.byref(queryValue), ctypes.wintypes.LPBYTE),
+                    ctypes.byref(dwSize),
+                )
+                if queryValueLast.value != queryValue.value:
+                    queryValueLast.value = queryValue.value
+                    self.callback('Light' if queryValue.value else 'Dark')
+
+    def _stop(self):
+        pass # Override NotSupported; stop() will set the ListenerState which is what we need
+        # TODO: Also interrupt the listener rather than permit it to die
+
+    def _wait(self, timeout: Optional[int]):
+        try:
+            if not self._lock.acquire(timeout=(-1 if timeout is None else timeout)):
+                raise DDTimeoutError(f"Timed out after {timeout} seconds.")
+        except Exception:
+            self._lock.release()
+            raise
 
 
 __all__ = ("theme", "WindowsListener",)

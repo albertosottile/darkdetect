@@ -7,10 +7,10 @@
 import subprocess
 from typing import Callable, Optional
 
-from .base import BaseListener
+from ._base_listener import BaseListener, DDTimeoutError
 
 
-def theme():
+def theme() -> Optional[str]:
     try:
         #Using the freedesktop specifications for checking dark mode
         stdout = subprocess.check_output(['gsettings', 'get', 'org.gnome.desktop.interface', 'color-scheme'])
@@ -30,24 +30,26 @@ class GnomeListener(BaseListener):
     """
 
     def __init__(self, callback: Callable[[str], None]):
-        self._proc: Optional[subprocess.Popen] = None
+        self._proc: subprocess.Popen
         super().__init__(callback)
 
     def _listen(self):
-        self._proc = subprocess.Popen(
+        with subprocess.Popen(
             ('gsettings', 'monitor', 'org.gnome.desktop.interface', 'gtk-theme'),
             stdout=subprocess.PIPE,
             universal_newlines=True,
-        )
-        with self._proc:
+        ) as self._proc:
             for line in self._proc.stdout:
                 self.callback('Dark' if '-dark' in line.strip().removeprefix("gtk-theme: '").removesuffix("'").lower() else 'Light')
 
     def _stop(self):
         self._proc.kill()
 
-    def _wait(self):
-        self._proc.wait()
+    def _wait(self, timeout: Optional[int]):
+        try:
+            self._proc.wait(timeout)
+        except subprocess.TimeoutExpired as e:
+            raise DDTimeoutError from e
 
 
 __all__ = ("theme", "GnomeListener",)

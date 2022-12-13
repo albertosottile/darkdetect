@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 from typing import Callable, Optional
 
-from .base import BaseListener
+from ._base_listener import BaseListener, DDTimeoutError
 
 
 try:
@@ -54,7 +54,7 @@ def n(name):
 def C(classname):
     return objc.objc_getClass(_utf8(classname))
 
-def theme():
+def theme() -> Optional[str]:
     NSAutoreleasePool = objc.objc_getClass('NSAutoreleasePool')
     pool = msg(NSAutoreleasePool, n('alloc'))
     pool = msg(pool, n('init'))
@@ -84,7 +84,7 @@ class MacListener(BaseListener):
     """
 
     def __init__(self, callback: Callable[[str], None]):
-        self._proc: Optional[subprocess.Popen] = None
+        self._proc: subprocess.Popen
         super().__init__(callback)
 
     # Overrides
@@ -92,21 +92,23 @@ class MacListener(BaseListener):
     def _listen(self):
         if not _can_listen:
             raise NotImplementedError("Optional dependencies not found; fix this with: pip install darkdetect[macos-listener]")
-        self._proc = subprocess.Popen(
+        with subprocess.Popen(
                 (sys.executable, "-c", "import darkdetect as d; d.MacListener._listen_child()"),
                 stdout=subprocess.PIPE,
                 universal_newlines=True,
                 cwd=Path(__file__).parents[1],
-        )
-        with self._proc:
+        ) as self._proc:
             for line in self._proc.stdout:
                 self.callback(line.strip())
 
     def _stop(self):
         self._proc.kill()
 
-    def _wait(self):
-        self._proc.wait()
+    def _wait(self, timeout: Optional[int]):
+        try:
+            self._proc.wait(timeout)
+        except subprocess.TimeoutExpired as e:
+            raise DDTimeoutError from e
 
     # Internal Methods
 

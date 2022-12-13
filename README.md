@@ -59,7 +59,7 @@ pip install darkdetect[macos-listener]
 ## Notes
 
 - This software is licensed under the terms of the 3-clause BSD License.
-- This package can be installed on any operative system, but it will always return `None` unless executed on a OS that supports Dark Mode, including older versions of macOS and Windows.
+- This package can be installed on any operative system, but `theme()`, `isDark()`, and `isLight()` will always return `None` unless executed on a OS that supports Dark Mode, including older versions of macOS and Windows.
 - On macOS, detection of the dark menu bar and dock option (available from macOS 10.10) is not supported.
 - [Details](https://stackoverflow.com/questions/25207077/how-to-detect-if-os-x-is-in-dark-mode) on the detection method used on macOS.
 - [Details](https://askubuntu.com/questions/1261366/detecting-dark-mode#comment2132694_1261366) on the experimental detection method used on Linux.

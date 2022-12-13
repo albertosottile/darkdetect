@@ -4,7 +4,7 @@
 #  Distributed under the terms of the 3-clause BSD License.
 #-----------------------------------------------------------------------------
 
-from .base import BaseListener
+from ._base_listener import BaseListener
 
 
 def theme():

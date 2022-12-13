@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Optional
 from enum import Enum, auto
 
 
@@ -9,6 +9,12 @@ class ListenerState(Enum):
     Listening = auto()
     Stopping = auto()
     Dead = auto()
+
+
+class DDTimeoutError(RuntimeError):
+    """
+    Raised when a listener's .wait() call times out
+    """
 
 
 class BaseListener:
@@ -54,14 +60,16 @@ class BaseListener:
             self._stop()
             self._state = ListenerState.Stopping
 
-    def wait(self):
+    def wait(self, timeout: Optional[int] = None):
         """
-        Stop the listener and wait's for it to finish
+        Stop the listener and waits for it to finish
         If the listener is dead, this is a no-op
+        If this function times out, a DDTimeoutError will be raised
+        :param timeout: Ensure this function will wait at max timeout seconds if specified
         """
         if self._state != ListenerState.Dead:
             self.stop()
-            self._wait()
+            self._wait(timeout)
             self._state = ListenerState.Dead
 
     # Non-public methods
@@ -78,7 +86,7 @@ class BaseListener:
         """
         raise NotImplementedError()
 
-    def _wait(self):
+    def _wait(self, timeout: Optional[int]):
         """
         Wait for the listener to stop
         Promised that .stop() method will have already been called
@@ -86,4 +94,4 @@ class BaseListener:
         raise NotImplementedError()
 
 
-__all__ = ("BaseListener", "ListenerState")
+__all__ = ("BaseListener", "ListenerState", "DDTimeoutError")
