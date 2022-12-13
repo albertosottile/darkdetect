@@ -8,10 +8,25 @@ This package allows to detect if the user is using Dark Mode on:
 
 The main application of this package is to detect the Dark mode from your GUI Python application (Tkinter/wx/pyqt/qt for python (pyside)/...) and apply the needed adjustments to your interface. Darkdetect is particularly useful if your GUI library **does not** provide a public API for this detection (I am looking at you, Qt). In addition, this package does not depend on other modules or packages that are not already included in standard Python distributions.
 
+## Install
+
+The preferred channel is PyPI:
+```bash
+pip install darkdetect
+```
+
+Alternatively, you are free to vendor directly a copy of Darkdetect in your app. Further information on vendoring can be found [here](https://medium.com/underdog-io-engineering/vendoring-python-dependencies-with-pip-b9eb6078b9c0).
+
+### macOS Listener Support
+
+To enable the macOS listener, additional components are required, these can be installed via:
+```bash
+pip install darkdetect[macos-listener]
+```
 
 ## Usage
 
-```
+```python
 import darkdetect
 
 >>> darkdetect.theme()
@@ -25,35 +40,104 @@ False
 ```
 It's that easy.
 
-You can create a dark mode switch listener daemon thread with `darkdetect.listener` and pass a callback function. The function will be called with string "Dark" or "Light" when the OS switches the dark mode setting.
+### Listener
 
-``` python
+`darkdetect` exposes a listener API which is far more efficient than busy waiting on `theme()` changes.
+This API is exposed primarily via a `Listener` class. 
+The `darkdetect.Listener` class exposes the following methods / members:
+
+##### `.__init__(callback: Callable[[str], None])`
+
+The construct simply sets `.callback` to the given callback argument
+
+##### `.callback: Callable[[str], None]` 
+
+The callback function that the listener uses.
+The function will be called with string "Dark" or "Light" when the OS 
+It is safe to change this during program execution.
+
+##### `.listen()`
+
+This starts listening for theme changes, it will invoke `self.callback(theme_name)` when a change is detected.
+
+##### `.stop()`
+
+This initiates the listener stop procedure; it will return immediately and will not wait for the listener or running callbacks to complete; it simply informs the listener that it may stop listening.
+Internally, listening may be done via a subprocess, so this can be thought of as a `subprocess.kill`.
+If the listener is not actively listening, this function is a no-op.
+
+##### `.wait(timeout: Optional[int] = None)`
+
+This will stop (as needed) the listener and wait for it / running callbacks to complete execution.
+It is not necessary to invoke `.stop()` before this function, as `.wait()` will invoke `.stop()` automatically.
+If a timeout is specified, `.wait` will wait at most `timeout` seconds before exiting.
+If this method times out, it will raise a `darkdetect.DDTimeoutError`.
+
+##### Wrapper Function
+
+The simplest method of using this API is the `darkdetect.listener` function, which takes a callback function as an argument.
+This function is a small wrapper around `Listener(callback).listen()`.
+_In this mode, the listener cannot be stopped_; forceful stops may not clean up resources (such as subprocesses if applicable).
+
+
+### Examples
+
+##### A simple listener:
+```python
 import threading
 import darkdetect
 
-# def listener(callback: typing.Callable[[str], None]) -> None: ...
-
-t = threading.Thread(target=darkdetect.listener, args=(print,))
-t.daemon = True
+listener = darkdetect.Listener(print)
+t = threading.Thread(target=listener.listen, daemon=True)
 t.start()
 ```
 
-*On macOS it simply raises a NotImplementedError. PRs in this direction are more than welcome.*
+##### User input controlling listener
+```python
+import threading
+import darkdetect
+import time
 
-## Install
+listener = darkdetect.Listener(print)
+t = threading.Thread(target=listener.listen)
+t.start()
 
-The preferred channel is PyPI:
+txt = ""
+while txt != "quit":
+  txt = input()
+  if txt == "print":
+    listener.callback = print
+  elif txt == "verbose":
+    listener.callback = lambda x: print(f"The theme changed to {x} as {time.time()}")
+listener.stop()
+
+print("Waiting for running callbacks to complete")
+listener.wait()
 ```
-pip install darkdetect
+
+##### Possible GUI app shutdown sequence
+```python
+...
+
+def shutdown():
+  listener.stop() # Initiate stop, allows callbacks to continue running
+  other_shutdown_methods() # Stop other processes
+
+  # Wait a bit longer for callbacks to complete and listener to clean up
+  try:
+    listener.wait(timeout = 10)  # This app has long callbacks, shutdown should be fast though!
+  except DarkDetect.DDTimeoutError as e:
+    # Log that callbacks are still running but we are quitting anyway
+    logger.exception(e)
 ```
 
-Alternatively, you are free to vendor directly a copy of Darkdetect in your app. Further information on vendoring can be found [here](https://medium.com/underdog-io-engineering/vendoring-python-dependencies-with-pip-b9eb6078b9c0).
+##### Super simple example of wrapper `listener` function:
+```python
+import threading
+import darkdetect
 
-## Optional Installs
-
-To enable the macOS listener, additional components are required, these can be installed via:
-```bash
-pip install darkdetect[macos-listener]
+t = threading.Thread(target=darkdetect.listener, args=(print,), daemon=True)
+t.start()
 ```
 
 ## Notes
