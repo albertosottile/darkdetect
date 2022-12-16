@@ -38,8 +38,6 @@ t.daemon = True
 t.start()
 ```
 
-*On macOS it simply raises a NotImplementedError. PRs in this direction are more than welcome.*
-
 ## Install
 
 The preferred channel is PyPI:
