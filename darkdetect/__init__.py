@@ -12,7 +12,7 @@ import sys
 import platform
 from typing import Callable, Optional, Type
 
-from ._base_listener import BaseListener, DDTimeoutError
+from ._base_listener import BaseListener
 Listener: Type[BaseListener]
 
 #
@@ -68,7 +68,12 @@ def listener(callback: Callable[[str], None]) -> None:
     Listen for a theme change, on theme change, invoke callback(theme_name)
     :param callback: The callback to invoke
     """
-    Listener(callback).listen()
+    l = Listener(callback)
+    try:
+        l.listen()
+    except KeyboardInterrupt:
+        l.stop(0)
+        raise
 
 
 del sys, platform, Callable, Type

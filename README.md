@@ -43,35 +43,53 @@ It's that easy.
 ### Listener
 
 `darkdetect` exposes a listener API which is far more efficient than busy waiting on `theme()` changes.
-This API is exposed primarily via a `Listener` class. 
+This API is exposed primarily via a `Listener` class.
 The `darkdetect.Listener` class exposes the following methods / members:
 
-##### `.__init__(callback: Callable[[str], None])`
+##### `.__init__(callback: Optional[Callable[[str], None]])`
 
 The construct simply sets `.callback` to the given callback argument
 
-##### `.callback: Callable[[str], None]` 
+##### `.callback: Optional[Callable[[str], None]]`
 
 The callback function that the listener uses.
-The function will be called with string "Dark" or "Light" when the OS 
+The function will be called with string "Dark" or "Light" when the OS
 It is safe to change this during program execution.
+It is safe to set this value to `None`, while the listener will still be active,
+theme changes will not invoke the callback; though running callbacks will not be interrupted.
+This is useful if 'temporarily pausing' the listener is desired.
 
 ##### `.listen()`
 
-This starts listening for theme changes, it will invoke `self.callback(theme_name)` when a change is detected.
+This starts listening for theme changes, it will invoke
+`self.callback(theme_name)` when a change is detected.
 
-##### `.stop()`
+After a listener is stopped successfully via `.stop` (the return value must be `True`),
+it can be started again via `.listen()`.
+New listeners may be constructed, should waiting for `.stop` not be desired.
 
-This initiates the listener stop procedure; it will return immediately and will not wait for the listener or running callbacks to complete; it simply informs the listener that it may stop listening.
-Internally, listening may be done via a subprocess, so this can be thought of as a `subprocess.kill`.
-If the listener is not actively listening, this function is a no-op.
+##### `.stop(timeout: Optional[int]) -> bool`
 
-##### `.wait(timeout: Optional[int] = None)`
+This function initiates the listener stop sequence and
+waits for the listener to stop for at most `timeout` seconds.
+This function returns `True` if the listener successfully
+stops before the timeout expires; otherwise `False`.
+`timeout` may be any non-negative integer or `None`.
+After `.stop` returns, regardless of the argument passed to it,
+theme changes will no longer invoke the callback
+Running callbacks will not be interrupted and may continue executing.
 
-This will stop (as needed) the listener and wait for it / running callbacks to complete execution.
-It is not necessary to invoke `.stop()` before this function, as `.wait()` will invoke `.stop()` automatically.
-If a timeout is specified, `.wait` will wait at most `timeout` seconds before exiting.
-If this method times out, it will raise a `darkdetect.DDTimeoutError`.
+`.stop` may safely be re-invoked any number of times.
+Calling `.stop(None)` after `.stop(0)` will work as expected.
+
+In most cases `.stop(0)` should be sufficient as this will successfully
+prevent future theme changes from generating callbacks.
+The two primary use cases for `stop` with a timeout are:
+1. Cleaning up listener resources (be that subprocesses or something else)
+2. To restart the existing listener; a listener's `.listen()` function
+may only be re-invoked if a call to `.stop` has returned `True`.
+
+Warning: `stop(None)` may hang if the listener cannot be interrupted until another theme change is detected.
 
 ##### Wrapper Function
 
@@ -109,24 +127,23 @@ while txt != "quit":
     listener.callback = print
   elif txt == "verbose":
     listener.callback = lambda x: print(f"The theme changed to {x} as {time.time()}")
-listener.stop()
+listener.stop(0)
 
-print("Waiting for running callbacks to complete")
-listener.wait()
+print("Waiting for running callbacks to complete and the listener to terminate")
+listener.stop(None)
 ```
 
 ##### Possible GUI app shutdown sequence
 ```python
 def shutdown(self):
-  self.listener.stop() # Initiate stop, allows callbacks to continue running
+  self.listener.stop(0)  # Initiate stop, allows callbacks to continue running
   self.other_shutdown_methods() # Stop other processes
 
   # Wait a bit longer for callbacks to complete and listener to clean up
   try:
-    self.listener.wait(timeout = 10)  # This app has long callbacks, shutdown should be fast though!
-  except darkdetect.DDTimeoutError as e:
-    # Log that callbacks are still running but that we are quitting anyway
-    self.logger.exception(e)
+    if self.listener.stop(timeout=10) is False:
+		# Log that listener is still running but that we are quitting anyway
+		self.logger.exception("Failed to shutdown listener within 10 seconds, quitting anyway.")
 ```
 
 ##### Super simple example of wrapper `listener` function:
@@ -138,11 +155,15 @@ t = threading.Thread(target=darkdetect.listener, args=(print,), daemon=True)
 t.start()
 ```
 
+## Known Issues
+
+1. On macOS, detection of the dark menu bar and dock option (available from macOS 10.10) is not supported.
+1. On macOS, using the listener API in a bundled app where `sys.executable` is not a python interpreter (such as pyinstaller builds), is not supported.
+1. On Windows, the after `Listener.stop` is invoked and running callbacks complete, future callbacks should not be made, but the listener itself will not die until another theme change; that is `.wait()` will hang until another theme change.
+
 ## Notes
 
 - This software is licensed under the terms of the 3-clause BSD License.
 - This package can be installed on any operative system, but `theme()`, `isDark()`, and `isLight()` will always return `None` unless executed on a OS that supports Dark Mode, including older versions of macOS and Windows.
-- On macOS, detection of the dark menu bar and dock option (available from macOS 10.10) is not supported.
-- On Windows, the after `Listener.stop()` is invoked and running callbacks complete, future callbacks should not be made, but the listener itself will not die until another theme change; that is `.wait()` will hang until another theme change. _PRs fixing this are welcome._
 - [Details](https://stackoverflow.com/questions/25207077/how-to-detect-if-os-x-is-in-dark-mode) on the detection method used on macOS.
 - [Details](https://askubuntu.com/questions/1261366/detecting-dark-mode#comment2132694_1261366) on the experimental detection method used on Linux.

@@ -3,9 +3,9 @@ from winreg import HKEY_CURRENT_USER as hkey, QueryValueEx as getSubkeyValue, Op
 import threading
 import ctypes
 import ctypes.wintypes
-from typing import Callable, Optional
+from typing import Optional
 
-from ._base_listener import BaseListener, ListenerState, DDTimeoutError
+from ._base_listener import BaseListener, ListenerState
 
 advapi32 = ctypes.windll.advapi32
 
@@ -81,11 +81,7 @@ class WindowsListener(BaseListener):
     A listener class for Windows
     """
 
-    def __init__(self, callback: Callable[[str], None]):
-        self._lock: threading.Lock
-        super().__init__(callback)
-
-    def _listen(self):
+    def _listen(self) -> None:
         hKey = ctypes.wintypes.HKEY()
         advapi32.RegOpenKeyExA(
             ctypes.wintypes.HKEY(0x80000001), # HKEY_CURRENT_USER
@@ -127,21 +123,17 @@ class WindowsListener(BaseListener):
                 )
                 if queryValueLast.value != queryValue.value:
                     queryValueLast.value = queryValue.value
-                    if self._state == ListenerState.Listening:
-                        self.callback('Light' if queryValue.value else 'Dark')
+                    self._invoke_callback('Light' if queryValue.value else 'Dark')
 
-    def _stop(self):
-        pass # Override NotSupported; stop() will set the ListenerState which is what we need
-        # TODO: Also interrupt the listener rather than permit it to die
+    def _initiate_shutdown(self) -> None:
+        pass # TODO: Interrupt the listener rather than permit it to die
 
-    def _wait(self, timeout: Optional[int]):
+    def _wait_for_shutdown(self, timeout: Optional[int]) -> bool:
         try:
-            timed_out: bool = not self._lock.acquire(timeout=(-1 if timeout is None else timeout))
+            return self._lock.acquire(timeout=(-1 if timeout is None else timeout))
         except Exception:
             self._lock.release()
             raise
-        if timed_out:
-            raise DDTimeoutError(f"Timed out after {timeout} seconds.")
 
 
 __all__ = ("theme", "WindowsListener",)

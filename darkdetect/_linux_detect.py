@@ -7,7 +7,7 @@
 import subprocess
 from typing import Callable, Optional
 
-from ._base_listener import BaseListener, DDTimeoutError
+from ._base_listener import BaseListener
 
 
 def theme() -> Optional[str]:
@@ -29,27 +29,27 @@ class GnomeListener(BaseListener):
     A listener for Gnome on Linux
     """
 
-    def __init__(self, callback: Callable[[str], None]):
-        self._proc: subprocess.Popen
-        super().__init__(callback)
-
-    def _listen(self):
+    def _listen(self) -> None:
         with subprocess.Popen(
             ('gsettings', 'monitor', 'org.gnome.desktop.interface', 'gtk-theme'),
             stdout=subprocess.PIPE,
             universal_newlines=True,
         ) as self._proc:
             for line in self._proc.stdout:
-                self.callback('Dark' if '-dark' in line.strip().removeprefix("gtk-theme: '").removesuffix("'").lower() else 'Light')
+                self._invoke_callback(
+                    'Dark' if '-dark' in line.strip().removeprefix("gtk-theme: '").removesuffix("'").lower()
+                    else 'Light'
+                )
 
-    def _stop(self):
+    def _initiate_shutdown(self) -> None:
         self._proc.kill()
 
-    def _wait(self, timeout: Optional[int]):
+    def _wait_for_shutdown(self, timeout: Optional[int]) -> bool:
         try:
             self._proc.wait(timeout)
-        except subprocess.TimeoutExpired as e:
-            raise DDTimeoutError from e
+            return True
+        except subprocess.TimeoutExpired:
+            return False
 
 
 __all__ = ("theme", "GnomeListener",)

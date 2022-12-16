@@ -11,26 +11,19 @@ class ListenerState(Enum):
     Dead = auto()
 
 
-class DDTimeoutError(RuntimeError):
-    """
-    Raised when a listener's .wait() call times out
-    """
-
-
 class BaseListener:
     """
     An abstract listener class
-    Subclasses promise that it is safe to call stop() then wait()
-    from a different thread than listen() was called in; provides two
-    threads are not both racing to call these methods
+    It is safe to call stop from a different thread than listen() was called in
+    provided multiple threads are not racing to call these methods
     """
 
-    def __init__(self, callback: Callable[[str], None]):
+    def __init__(self, callback: Optional[Callable[[str], None]]):
         """
         :param callback: The callback to use when the listener detects something
         """
         self._state: ListenerState = ListenerState.Dead
-        self.callback: Callable[[str], None] = callback
+        self.callback: Optional[Callable[[str], None]] = callback
 
     def listen(self):
         """
@@ -39,7 +32,7 @@ class BaseListener:
         if self._state == ListenerState.Listening:
             raise RuntimeError("Do not run .listen() from multiple threads concurrently")
         if self._state == ListenerState.Stopping:
-            raise RuntimeError("Call .wait() to wait for the previous listener to finish shutting down")
+            raise RuntimeError("Call .stop to wait for the previous listener to finish shutting down")
         self._state = ListenerState.Listening
         try:
             self._listen()
@@ -50,48 +43,59 @@ class BaseListener:
             self.stop()  # Just in case
             raise RuntimeError("Listen failed") from e
 
-    def stop(self):
+    def stop(self, timeout: Optional[int] = None) -> bool:
         """
-        Tells the listener to stop; may return before the listener has stopped
-        If the listener is not currently listening, this is a no-op
-        This function may be called if .listen() errors
+        Initiate the listener stop sequence, wait at most timeout seconds for it to complete.
+        After this function returns, new theme changes will not invoke callbacks.
+        Running callbacks will not be interrupted.
+        May safely be called as many times as desired.
+        Warning: stop(None) may hang until the next theme change, depending on implementation
+        :param timeout: How many seconds to wait until the listener stops; None means infinite
+        :return: True if the listener completes before the timeout expires, else False
+        """
+        if timeout is not None and timeout < 0:
+            raise RuntimeError("timeout may not be negative")
+        if self._state == ListenerState.Listening:
+            self._initiate_shutdown()
+            self._state = ListenerState.Stopping
+        if self._state == ListenerState.Stopping:
+            if self._wait_for_shutdown(timeout):
+                self._state = ListenerState.Dead
+        return self._state == ListenerState.Dead
+
+    # Non-public helper methods
+
+    def _invoke_callback(self, value: str) -> None:
+        """
+        Invoke the stored callback if the state is listening
         """
         if self._state == ListenerState.Listening:
-            self._stop()
-            self._state = ListenerState.Stopping
-
-    def wait(self, timeout: Optional[int] = None):
-        """
-        Stop the listener and waits for it to finish
-        If the listener is dead, this is a no-op
-        If this function times out, a DDTimeoutError will be raised
-        :param timeout: Ensure this function will wait at max timeout seconds if specified
-        """
-        if self._state != ListenerState.Dead:
-            self.stop()
-            self._wait(timeout)
-            self._state = ListenerState.Dead
+            c: Optional[Callable[[str], None]] = self.callback
+            if c is not None:
+                c(value)
 
     # Non-public methods
 
-    def _listen(self):
+    def _listen(self) -> None:
         """
         Start the listener
         """
         raise NotImplementedError()
 
-    def _stop(self):
+    def _initiate_shutdown(self) -> None:
         """
-        Tell the listener, do not bother waiting for it to finish stopping
-        """
-        raise NotImplementedError()
-
-    def _wait(self, timeout: Optional[int]):
-        """
-        Wait for the listener to stop
-        Promised that .stop() method will have already been called
+        Tell the listener to initiate shutdown
         """
         raise NotImplementedError()
 
+    def _wait_for_shutdown(self, timeout: Optional[int]) -> bool:
+        """
+        Wait for the listener to stop at most timeout seconds
+        Promised that _initiate_shutdown() will have already run
+        :param timeout: How many seconds to wait until the listener stops; None means infinite
+        :return: True if the listener completes before the timeout expires, else False
+        """
+        raise NotImplementedError()
 
-__all__ = ("BaseListener", "ListenerState", "DDTimeoutError")
+
+__all__ = ("BaseListener", "ListenerState")

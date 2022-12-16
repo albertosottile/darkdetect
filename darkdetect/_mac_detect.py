@@ -11,9 +11,9 @@ import signal
 import sys
 import os
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Optional
 
-from ._base_listener import BaseListener, DDTimeoutError
+from ._base_listener import BaseListener
 
 
 try:
@@ -83,13 +83,7 @@ class MacListener(BaseListener):
     A listener class for macOS
     """
 
-    def __init__(self, callback: Callable[[str], None]):
-        self._proc: subprocess.Popen
-        super().__init__(callback)
-
-    # Overrides
-
-    def _listen(self):
+    def _listen(self) -> None:
         if not _can_listen:
             raise NotImplementedError("Optional dependencies not found; fix this with: pip install darkdetect[macos-listener]")
         with subprocess.Popen(
@@ -99,21 +93,22 @@ class MacListener(BaseListener):
                 cwd=Path(__file__).parents[1],
         ) as self._proc:
             for line in self._proc.stdout:
-                self.callback(line.strip())
+                self._invoke_callback(line.strip())
 
-    def _stop(self):
+    def _initiate_shutdown(self) -> None:
         self._proc.kill()
 
-    def _wait(self, timeout: Optional[int]):
+    def _wait_for_shutdown(self, timeout: Optional[int]) -> bool:
         try:
             self._proc.wait(timeout)
-        except subprocess.TimeoutExpired as e:
-            raise DDTimeoutError from e
+            return True
+        except subprocess.TimeoutExpired:
+            return False
 
     # Internal Methods
 
     @staticmethod
-    def _listen_child():
+    def _listen_child() -> None:
         """
         Run by a child process, install an observer and print theme on change
         """
