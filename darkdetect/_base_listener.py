@@ -54,7 +54,7 @@ class BaseListener:
         :return: True if the listener completes before the timeout expires, else False
         """
         if timeout is not None and timeout < 0:
-            raise RuntimeError("timeout may not be negative")
+            raise ValueError("timeout may not be negative")
         if self._state == ListenerState.Listening:
             self._initiate_shutdown()
             self._state = ListenerState.Stopping

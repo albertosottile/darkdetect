@@ -81,6 +81,14 @@ class WindowsListener(BaseListener):
     A listener class for Windows
     """
 
+    def stop(self, timeout: Optional[int] = None) -> bool:
+        if timeout is None:
+            raise ValueError(
+                "WindowsListener does not currently support None as the wait time is indefinite." \
+                "If None truly is necessary, consider something like stop(2**100)"
+            )
+        return super().stop(timeout)
+
     def _listen(self) -> None:
         hKey = ctypes.wintypes.HKEY()
         advapi32.RegOpenKeyExA(
