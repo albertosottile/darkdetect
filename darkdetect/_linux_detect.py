@@ -5,7 +5,7 @@
 #-----------------------------------------------------------------------------
 
 import subprocess
-from typing import Callable, Optional
+from typing import Optional
 
 from ._base_listener import BaseListener
 

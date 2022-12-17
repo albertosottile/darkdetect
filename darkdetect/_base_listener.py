@@ -36,12 +36,8 @@ class BaseListener:
         self._state = ListenerState.Listening
         try:
             self._listen()
-        except NotImplementedError:
-            self._state = ListenerState.Dead
-            raise
-        except Exception as e:
-            self.stop()  # Just in case
-            raise RuntimeError("Listen failed") from e
+        except BaseException as e:
+            self._on_listen_fail_base(e)
 
     def stop(self, timeout: Optional[int] = None) -> bool:
         """
@@ -74,28 +70,50 @@ class BaseListener:
             if c is not None:
                 c(value)
 
+    def _on_listen_fail_base(self, why: BaseException) -> None:
+        """
+        Invoked by .listen on all failures; self._state is unknown
+        Note that .stop may still be called on a failed listener!
+        Users should only override this if catching base exceptions is required
+        For example: Emergency cleanup when a user KeyboardInterrupts a program via Ctrl-C
+        :param why: The exception caught by _listen
+        """
+        if isinstance(why, (BaseException, NotImplementedError)):
+            raise why
+        self._on_listen_fail(why)
+
     # Non-public methods
 
     def _listen(self) -> None:
         """
         Start the listener
+        Will only be called if self._state is Dead
         """
         raise NotImplementedError()
 
     def _initiate_shutdown(self) -> None:
         """
         Tell the listener to initiate shutdown
+        Will only be called if self._state is Listening
         """
         raise NotImplementedError()
 
     def _wait_for_shutdown(self, timeout: Optional[int]) -> bool:
         """
         Wait for the listener to stop at most timeout seconds
-        Promised that _initiate_shutdown() will have already run
+        Will only be called if self._state is Stopping
         :param timeout: How many seconds to wait until the listener stops; None means infinite
         :return: True if the listener completes before the timeout expires, else False
         """
         raise NotImplementedError()
+
+    def _on_listen_fail(self, why: Exception) -> None:
+        """
+        Invoked by .listen on most failures; self._state is unknown
+        Note that .stop may still be called on a failed listener!
+        :param why: The exception caught by _listen
+        """
+        raise RuntimeError("Listener.listen failed") from why
 
 
 __all__ = ("BaseListener", "ListenerState")
