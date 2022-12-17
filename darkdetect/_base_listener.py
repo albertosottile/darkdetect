@@ -39,7 +39,7 @@ class BaseListener:
         except BaseException as e:
             self._on_listen_fail_base(e)
 
-    def stop(self, timeout: Optional[int] = None) -> bool:
+    def stop(self, timeout: Optional[int]) -> bool:
         """
         Initiate the listener stop sequence, wait at most timeout seconds for it to complete.
         After this function returns, new theme changes will not invoke callbacks.
