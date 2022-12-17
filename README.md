@@ -89,8 +89,6 @@ The two primary use cases for `stop` with a timeout are:
 2. To restart the existing listener; a listener's `.listen()` function
 may only be re-invoked if a call to `.stop` has returned `True`.
 
-Warning: `stop(None)` may hang if the listener cannot be interrupted until another theme change is detected.
-
 ##### Wrapper Function
 
 The simplest method of using this API is the `darkdetect.listener` function, which takes a callback function as an argument.
@@ -130,7 +128,8 @@ while txt != "quit":
 listener.stop(0)
 
 print("Waiting for running callbacks to complete and the listener to terminate")
-listener.stop(None)
+if not listener.stop(timeout=5):
+	print("Callbacks / listener are still running after 5 seconds!")
 ```
 
 ##### Possible GUI app shutdown sequence
@@ -159,7 +158,8 @@ t.start()
 
 1. On macOS, detection of the dark menu bar and dock option (available from macOS 10.10) is not supported.
 1. On macOS, using the listener API in a bundled app where `sys.executable` is not a python interpreter (such as pyinstaller builds), is not supported.
-1. On Windows, the after `Listener.stop` is invoked and running callbacks complete, future callbacks should not be made, but the listener itself will not die until another theme change; that is `.wait()` will hang until another theme change.
+1. On Windows, the after `Listener.stop(None)` is not supported as it may not die until another theme change is detected.
+Future invcations of `callback` will not be made, but the listener itself will persist.
 
 ## Notes
 

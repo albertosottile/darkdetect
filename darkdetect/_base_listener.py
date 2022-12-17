@@ -45,7 +45,6 @@ class BaseListener:
         After this function returns, new theme changes will not invoke callbacks.
         Running callbacks will not be interrupted.
         May safely be called as many times as desired.
-        Warning: stop(None) may hang until the next theme change, depending on implementation
         :param timeout: How many seconds to wait until the listener stops; None means infinite
         :return: True if the listener completes before the timeout expires, else False
         """
