@@ -8,6 +8,28 @@ import subprocess
 
 def theme():
     try:
+        # Using the freedesktop portals for checking dark mode
+        import jeepney.io.blocking
+        import jeepney
+
+        portal = jeepney.DBusAddress(
+            object_path='/org/freedesktop/portal/desktop',
+            bus_name='org.freedesktop.portal.Desktop',
+            interface='org.freedesktop.portal.Settings'
+        )
+
+        con = jeepney.io.blocking.open_dbus_connection(bus='SESSION')
+        method = jeepney.new_method_call(portal, 'Read', 'ss', ('org.freedesktop.appearance', 'color-scheme'))
+        darkmode = con.send_and_get_reply(method).body[0][1][1]
+
+        if darkmode == 1:
+            return 'Dark'
+        else:
+            return 'Light'
+    except Exception:
+        pass
+
+    try:
         #Using the freedesktop specifications for checking dark mode
         out = subprocess.run(
             ['gsettings', 'get', 'org.gnome.desktop.interface', 'color-scheme'],
