@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 name = "darkdetect"
 description = "Detect OS Dark Mode from Python"
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.7"
 dynamic = [ "version" ]
 classifiers = [
     "License :: OSI Approved :: BSD License",
@@ -16,11 +16,14 @@ classifiers = [
     "Operating System :: Microsoft :: Windows :: Windows 10",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11"
+]
+dependencies = [
+    "jeepney; platform_system=='Linux'"
 ]
 
 [project.license]
