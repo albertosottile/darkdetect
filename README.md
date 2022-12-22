@@ -48,12 +48,12 @@ The `darkdetect.Listener` class exposes the following methods / members:
 
 ##### `.__init__(callback: Optional[Callable[[str], None]])`
 
-The construct simply sets `.callback` to the given callback argument
+The constructor simply sets `.callback` to the given callback argument
 
 ##### `.callback: Optional[Callable[[str], None]]`
 
 The callback function that the listener uses.
-The function will be called with string "Dark" or "Light" when the OS
+This function will be passed "Dark" or "Light" when the theme is changed.
 It is safe to change this during program execution.
 It is safe to set this value to `None`, while the listener will still be active,
 theme changes will not invoke the callback; though running callbacks will not be interrupted.
@@ -145,7 +145,7 @@ def shutdown(self):
 		self.logger.exception("Failed to shutdown listener within 10 seconds, quitting anyway.")
 ```
 
-##### Super simple example of wrapper `listener` function:
+##### Example of wrapper `listener` function:
 ```python
 import threading
 import darkdetect
@@ -159,7 +159,7 @@ t.start()
 1. On macOS, detection of the dark menu bar and dock option (available from macOS 10.10) is not supported.
 1. On macOS, using the listener API in a bundled app where `sys.executable` is not a python interpreter (such as pyinstaller builds), is not supported.
 1. On Windows, the after `Listener.stop(None)` is not supported as it may not die until another theme change is detected.
-Future invcations of `callback` will not be made, but the listener itself will persist.
+Future invocations of `callback` will not be made, but the listener itself will persist.
 
 ## Notes
 
