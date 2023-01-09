@@ -44,59 +44,42 @@ It's that easy.
 
 `darkdetect` exposes a listener API which is far more efficient than busy waiting on `theme()` changes.
 This API is exposed primarily via a `Listener` class.
-The `darkdetect.Listener` class exposes the following methods / members:
+Detailed API documentation can be found [here](docs/api.md).
+For a quick overview: the `darkdetect.Listener` class exposes the following methods / members:
 
 ##### `.__init__(callback: Optional[Callable[[str], None]])`
-
 The constructor simply sets `.callback` to the given callback argument
 
 ##### `.callback: Optional[Callable[[str], None]]`
-
-The callback function that the listener uses.
-This function will be passed "Dark" or "Light" when the theme is changed.
-It is safe to change this during program execution.
-It is safe to set this value to `None`, while the listener will still be active,
-theme changes will not invoke the callback; though running callbacks will not be interrupted.
-This is useful if 'temporarily pausing' the listener is desired.
+The settable callback function that the listener uses; it will be passed "Dark" or "Light" when the theme is changed.
 
 ##### `.listen()`
-
 This starts listening for theme changes, it will invoke
 `self.callback(theme_name)` when a change is detected.
 
-After a listener is stopped successfully via `.stop` (the return value must be `True`),
-it can be started again via `.listen()`.
-New listeners may be constructed, should waiting for `.stop` not be desired.
-
 ##### `.stop(timeout: Optional[int]) -> bool`
 
-This function initiates the listener stop sequence and
-waits for the listener to stop for at most `timeout` seconds.
-This function returns `True` if the listener successfully
-stops before the timeout expires; otherwise `False`.
-`timeout` may be any non-negative integer or `None`.
-After `.stop` returns, regardless of the argument passed to it,
-theme changes will no longer invoke the callback
-Running callbacks will not be interrupted and may continue executing.
+This function attempts to stop the listener,
+waiting at most `timeout` seconds (`None` means infinite),
+returning `True` on success, `False` on timeout.
+
+Regardless of the result, after `.stop` returns, theme changes 
+will no longer trigger `callback`, though running callbacks will
+not be interrupted.
 
 `.stop` may safely be re-invoked any number of times.
-Calling `.stop(None)` after `.stop(0)` will work as expected.
-
-In most cases `.stop(0)` should be sufficient as this will successfully
-prevent future theme changes from generating callbacks.
-The two primary use cases for `stop` with a timeout are:
-1. Cleaning up listener resources (be that subprocesses or something else)
-2. To restart the existing listener; a listener's `.listen()` function
-may only be re-invoked if a call to `.stop` has returned `True`.
+`.listen()` may not be called until a call to `.stop` succeeds.
 
 ##### Wrapper Function
 
-The simplest method of using this API is the `darkdetect.listener` function, which takes a callback function as an argument.
+The simplest method of using this API is the `darkdetect.listener` function,
+which takes a callback function as an argument.
 This function is a small wrapper around `Listener(callback).listen()`.
 _In this mode, the listener cannot be stopped_; forceful stops may not clean up resources (such as subprocesses if applicable).
 
-
 ### Examples
+
+Below are 2 examples of basic usage; additional examples can be found [here](docs/examples.md).
 
 ##### A simple listener:
 ```python
@@ -105,6 +88,7 @@ import darkdetect
 
 listener = darkdetect.Listener(print)
 t = threading.Thread(target=listener.listen, daemon=True)
+# OR: t = threading.Thread(target=darkdetect.listener, args=(print,), daemon=True)
 t.start()
 ```
 
@@ -129,29 +113,7 @@ listener.stop(0)
 
 print("Waiting for running callbacks to complete and the listener to terminate")
 if not listener.stop(timeout=5):
-	print("Callbacks / listener are still running after 5 seconds!")
-```
-
-##### Possible GUI app shutdown sequence
-```python
-def shutdown(self):
-  self.listener.stop(0)  # Initiate stop, allows callbacks to continue running
-  self.other_shutdown_methods() # Stop other processes
-
-  # Wait a bit longer for callbacks to complete and listener to clean up
-  try:
-    if self.listener.stop(timeout=10) is False:
-		# Log that listener is still running but that we are quitting anyway
-		self.logger.exception("Failed to shutdown listener within 10 seconds, quitting anyway.")
-```
-
-##### Example of wrapper `listener` function:
-```python
-import threading
-import darkdetect
-
-t = threading.Thread(target=darkdetect.listener, args=(print,), daemon=True)
-t.start()
+  print("Callbacks/listener are still running after 5 seconds!")
 ```
 
 ## Known Issues

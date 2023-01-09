@@ -37,7 +37,7 @@ class BaseListener:
         try:
             self._listen()
         except BaseException as e:
-            self._on_listen_fail_base(e)
+            self._on_listen_fail(e)
 
     def stop(self, timeout: Optional[int]) -> bool:
         """
@@ -69,18 +69,6 @@ class BaseListener:
             if c is not None:
                 c(value)
 
-    def _on_listen_fail_base(self, why: BaseException) -> None:
-        """
-        Invoked by .listen on all failures; self._state is unknown
-        Note that .stop may still be called on a failed listener!
-        Users should only override this if catching base exceptions is required
-        For example: Emergency cleanup when a user KeyboardInterrupts a program via Ctrl-C
-        :param why: The exception caught by _listen
-        """
-        if isinstance(why, (BaseException, NotImplementedError)):
-            raise why
-        self._on_listen_fail(why)
-
     # Non-public methods
 
     def _listen(self) -> None:
@@ -106,12 +94,16 @@ class BaseListener:
         """
         raise NotImplementedError()
 
-    def _on_listen_fail(self, why: Exception) -> None:
+    def _on_listen_fail(self, why: BaseException) -> None:
         """
-        Invoked by .listen on most failures; self._state is unknown
+        Invoked by .listen on all failures; self._state is unknown
         Note that .stop may still be called on a failed listener!
+        This function must handle BaseExceptions as well!
+        For example: Emergency cleanup when a user KeyboardInterrupts a program via Ctrl-C
         :param why: The exception caught by _listen
         """
+        if isinstance(why, (BaseException, NotImplementedError)):
+            raise why
         raise RuntimeError("Listener.listen failed") from why
 
 
