@@ -47,28 +47,18 @@ This API is exposed primarily via a `Listener` class.
 Detailed API documentation can be found [here](docs/api.md).
 For a quick overview: the `darkdetect.Listener` class exposes the following methods / members:
 
-##### `.__init__(callback: Optional[Callable[[str], None]])`
-The constructor simply sets `.callback` to the given callback argument
-
-##### `.callback: Optional[Callable[[str], None]]`
-The settable callback function that the listener uses; it will be passed "Dark" or "Light" when the theme is changed.
-
-##### `.listen()`
-This starts listening for theme changes, it will invoke
+1. `.__init__(callback: Optional[Callable[[str], None]])`: The constructor simply sets `.callback` to the given callback argument
+1. `.callback: Optional[Callable[[str], None]]`: The settable callback function that the listener uses; it will be passed "Dark" or "Light" when the theme is changed.
+1. `.listen()`: This starts listening for theme changes, it will invoke
 `self.callback(theme_name)` when a change is detected.
-
-##### `.stop(timeout: Optional[int]) -> bool`
-
+1. `.stop(timeout: Optional[int]) -> bool`: 
 This function attempts to stop the listener,
 waiting at most `timeout` seconds (`None` means infinite),
 returning `True` on success, `False` on timeout.
-
 Regardless of the result, after `.stop` returns, theme changes 
 will no longer trigger `callback`, though running callbacks will
 not be interrupted.
-
-`.stop` may safely be re-invoked any number of times.
-`.listen()` may not be called until a call to `.stop` succeeds.
+`.stop` may safely be re-invoked any number of times, but must succeed at before re-calling `.listen()`.
 
 ##### Wrapper Function
 
