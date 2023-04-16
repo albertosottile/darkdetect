@@ -8,17 +8,30 @@ import subprocess
 
 def theme():
     try:
-        #Using the freedesktop specifications for checking dark mode
+        #Using dbus-send command to get the theme of user using the freedesktop standards
+        command = ["dbus-send","--session","--print-reply=literal","--dest=org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop", "org.freedesktop.portal.Settings.Read", "string:org.freedesktop.appearance", "string:color-scheme"]
+        out = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        stdout=str(out.stdout.decode())
+        if len(stdout.strip())<1:
+            pass
+        else:
+            finalResult=stdout.replace("uint32","").strip("variant \n")
+            print(f"using {command[0]}")
+            #0=Default, 1=prefers-dark, 2=prefers-light
+            if finalResult=="1":
+                return 'Dark'
+            elif (finalResult=="2"):
+                return 'Light'
+            else:
+                #If result Default(0) or invalid, fallback to gtk-theme method
+                pass
+    except Exception:
+        pass
+    try:
         out = subprocess.run(
-            ['gsettings', 'get', 'org.gnome.desktop.interface', 'color-scheme'],
+            ['gsettings', 'get', 'org.gnome.desktop.interface', 'gtk-theme'],
             capture_output=True)
         stdout = out.stdout.decode()
-        #If not found then trying older gtk-theme method
-        if len(stdout)<1:
-            out = subprocess.run(
-                ['gsettings', 'get', 'org.gnome.desktop.interface', 'gtk-theme'],
-                capture_output=True)
-            stdout = out.stdout.decode()
     except Exception:
         return 'Light'
     # we have a string, now remove start and end quote
@@ -27,7 +40,7 @@ def theme():
         return 'Dark'
     else:
         return 'Light'
-
+print(theme())
 def isDark():
     return theme() == 'Dark'
 
