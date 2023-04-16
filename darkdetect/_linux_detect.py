@@ -16,7 +16,6 @@ def theme():
             pass
         else:
             finalResult=stdout.replace("uint32","").strip("variant \n")
-            print(f"using {command[0]}")
             #0=Default, 1=prefers-dark, 2=prefers-light
             if finalResult=="1":
                 return 'Dark'
