@@ -40,7 +40,7 @@ def theme():
         return 'Dark'
     else:
         return 'Light'
-print(theme())
+
 def isDark():
     return theme() == 'Dark'
 
