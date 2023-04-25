@@ -86,8 +86,9 @@ class MacListener(BaseListener):
     def _listen(self) -> None:
         if not _can_listen:
             raise NotImplementedError("Optional dependencies not found; fix this with: pip install darkdetect[macos-listener]")
+        fix = "from multiprocessing.resource_tracker import main;"
         with subprocess.Popen(
-                (sys.executable, "-c", "import darkdetect as d; d.MacListener._listen_child()"),
+                (sys.executable, "-c", fix + "import darkdetect as d; d.MacListener._listen_child()"),
                 stdout=subprocess.PIPE,
                 universal_newlines=True,
                 cwd=Path(__file__).parents[1],
