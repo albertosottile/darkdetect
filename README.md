@@ -109,7 +109,7 @@ if not listener.stop(timeout=5):
 ## Known Issues
 
 1. On macOS, detection of the dark menu bar and dock option (available from macOS 10.10) is not supported.
-1. On macOS, using the listener API in a bundled app where `sys.executable` is not a python interpreter (such as pyinstaller builds), is not supported.
+1. On macOS, using the listener API in a bundled app where `sys.executable` is not a python interpreter is not supported (though it may still work as it uses the same code path as `multiprocessing`).
 1. On Windows, the after `Listener.stop(None)` is not supported as it may not die until another theme change is detected.
 Future invocations of `callback` will not be made, but the listener itself will persist.
 
