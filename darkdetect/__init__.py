@@ -8,37 +8,70 @@ __version__ = '0.8.0'
 
 import sys
 import platform
+from typing import Callable, Optional, Type
+
+from ._base_listener import BaseListener
+Listener: Type[BaseListener]
+
+#
+# Import correct the listener for the given OS
+#
 
 def macos_supported_version():
-    sysver = platform.mac_ver()[0] #typically 10.14.2 or 12.3
-    major = int(sysver.split('.')[0])
+    sysver: str = platform.mac_ver()[0]  # typically 10.14.2 or 12.3
+    major: int = int(sysver.split('.')[0])
     if major < 10:
         return False
-    elif major >= 11:
+    if major >= 11:
         return True
-    else:
-        minor = int(sysver.split('.')[1])
-        if minor < 14:
-            return False
-        else:
-            return True
+    return int(sysver.split('.')[1]) >= 14
 
-if sys.platform == "darwin":
-    if macos_supported_version():
-        from ._mac_detect import *
-    else:
-        from ._dummy import *
-elif sys.platform == "win32" and platform.release().isdigit() and int(platform.release()) >= 10:
-    # Checks if running Windows 10 version 10.0.14393 (Anniversary Update) OR HIGHER. The getwindowsversion method returns a tuple.
-    # The third item is the build number that we can use to check if the user has a new enough version of Windows.
-    winver = int(platform.version().split('.')[2])
-    if winver >= 14393:
-        from ._windows_detect import *
-    else:
-        from ._dummy import *
+if sys.platform == "darwin" and macos_supported_version():
+    from ._mac_detect import *
+    Listener = MacListener
+# If running Windows 10 version 10.0.14393 (Anniversary Update) OR HIGHER.
+elif sys.platform == "win32" and platform.release().isdigit() and int(platform.release()) >= 10 and \
+        int(platform.version().split('.')[2]) >= 14393:
+    from ._windows_detect import *
+    Listener = WindowsListener
 elif sys.platform == "linux":
     from ._linux_detect import *
+    Listener = GnomeListener
 else:
     from ._dummy import *
+    Listener = DummyListener
 
-del sys, platform
+#
+# Common shortcut functions
+#
+
+def isDark() -> Optional[bool]:
+    """
+    :return: True if the theme is Dark, False if not, None if there is no support for this OS
+    """
+    t: Optional[str] = theme()
+    return t if t is None else (t == "Dark")
+
+
+def isLight() -> Optional[bool]:
+    """
+    :return: True if the theme is Light, False if not, None if there is no support for this OS
+    """
+    t: Optional[str] = theme()
+    return t if t is None else (t == "Light")
+
+
+def listener(callback: Callable[[str], None]) -> None:
+    """
+    Listen for a theme change, on theme change, invoke callback(theme_name)
+    :param callback: The callback to invoke
+    """
+    l = Listener(callback)
+    try:
+        l.listen()
+    except KeyboardInterrupt:
+        l.stop(0)
+        raise
+
+
+del sys, platform, Callable, Type

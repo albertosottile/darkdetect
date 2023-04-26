@@ -5,41 +5,51 @@
 #-----------------------------------------------------------------------------
 
 import subprocess
+from typing import Optional
 
-def theme():
+from ._base_listener import BaseListener
+
+
+def theme() -> Optional[str]:
     try:
         #Using the freedesktop specifications for checking dark mode
-        out = subprocess.run(
-            ['gsettings', 'get', 'org.gnome.desktop.interface', 'color-scheme'],
-            capture_output=True)
-        stdout = out.stdout.decode()
+        stdout = subprocess.check_output(['gsettings', 'get', 'org.gnome.desktop.interface', 'color-scheme'])
         #If not found then trying older gtk-theme method
         if len(stdout)<1:
-            out = subprocess.run(
-                ['gsettings', 'get', 'org.gnome.desktop.interface', 'gtk-theme'],
-                capture_output=True)
-            stdout = out.stdout.decode()
-    except Exception:
-        return 'Light'
+            stdout = subprocess.check_output(['gsettings', 'get', 'org.gnome.desktop.interface', 'gtk-theme'])
+    except subprocess.SubprocessError:
+        return "Light"
     # we have a string, now remove start and end quote
-    theme = stdout.lower().strip()[1:-1]
-    if '-dark' in theme.lower():
-        return 'Dark'
-    else:
-        return 'Light'
+    theme_: bytes = stdout.lower().strip()[1:-1]
+    return "Dark" if b"-dark" in theme_.lower() else "Light"
 
-def isDark():
-    return theme() == 'Dark'
 
-def isLight():
-    return theme() == 'Light'
+class GnomeListener(BaseListener):
+    """
+    A listener for Gnome on Linux
+    """
 
-# def listener(callback: typing.Callable[[str], None]) -> None:
-def listener(callback):
-    with subprocess.Popen(
-        ('gsettings', 'monitor', 'org.gnome.desktop.interface', 'gtk-theme'),
-        stdout=subprocess.PIPE,
-        universal_newlines=True,
-    ) as p:
-        for line in p.stdout:
-            callback('Dark' if '-dark' in line.strip().removeprefix("gtk-theme: '").removesuffix("'").lower() else 'Light')
+    def _listen(self) -> None:
+        with subprocess.Popen(
+            ('gsettings', 'monitor', 'org.gnome.desktop.interface', 'gtk-theme'),
+            stdout=subprocess.PIPE,
+            universal_newlines=True,
+        ) as self._proc:
+            for line in self._proc.stdout:
+                self._invoke_callback(
+                    'Dark' if '-dark' in line.strip().removeprefix("gtk-theme: '").removesuffix("'").lower()
+                    else 'Light'
+                )
+
+    def _initiate_shutdown(self) -> None:
+        self._proc.kill()
+
+    def _wait_for_shutdown(self, timeout: Optional[int]) -> bool:
+        try:
+            self._proc.wait(timeout)
+            return True
+        except subprocess.TimeoutExpired:
+            return False
+
+
+__all__ = ("theme", "GnomeListener",)
