@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-#  Copyright (C) 2019 Alberto Sottile
+#  Copyright (C) 2019 Alberto Sottile, Zachary Wimer
 #
 #  Distributed under the terms of the 3-clause BSD License.
 #-----------------------------------------------------------------------------
@@ -86,9 +86,14 @@ class MacListener(BaseListener):
     def _listen(self) -> None:
         if not _can_listen:
             raise NotImplementedError("Optional dependencies not found; fix this with: pip install darkdetect[macos-listener]")
-        fix = "from multiprocessing.resource_tracker import main;"
+        cmd = "import darkdetect as d; d.MacListener._listen_child()"
+        if getattr(sys, "frozen", False):
+            # This arrangement allows compatibility with pyinstaller and such (it is what multiprocessing does)
+            args = ("-B", "-s", "-S", "-E","-c", "from multiprocessing.resource_tracker import main;" + cmd)
+        else:
+            args = ("-B", "-c", cmd)
         with subprocess.Popen(
-                (sys.executable, "-c", fix + "import darkdetect as d; d.MacListener._listen_child()"),
+                (sys.executable, *args),
                 stdout=subprocess.PIPE,
                 universal_newlines=True,
                 cwd=Path(__file__).parents[1],
