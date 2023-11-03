@@ -5,6 +5,7 @@ This package allows to detect if the user is using Dark Mode on:
 - [macOS 10.14+](https://support.apple.com/en-us/HT208976)
 - [Windows 10 1607+](https://blogs.windows.com/windowsexperience/2016/08/08/windows-10-tip-personalize-your-pc-by-enabling-the-dark-theme/)
 - Linux with [a dark GTK theme](https://www.gnome-look.org/browse/cat/135/ord/rating/?tag=dark).
+- Linux with [a dark XFCE theme](https://www.xfce-look.org/browse?tag=dark).
 
 The main application of this package is to detect the Dark mode from your GUI Python application (Tkinter/wx/pyqt/qt for python (pyside)/...) and apply the needed adjustments to your interface. Darkdetect is particularly useful if your GUI library **does not** provide a public API for this detection (I am looking at you, Qt). In addition, this package does not depend on other modules or packages that are not already included in standard Python distributions.
 
@@ -24,6 +25,8 @@ True
 False
 ```
 It's that easy.
+
+The theme can be either 'Dark' or 'Light'. If the library cannot detect a theme unambiguously, it returns 'Unknown' so that the application can choose an appropriate default behavior. Unknown may also be returned if not using a GTK or XFCE desktop. When the theme is Unknown, both isDark() and isLight() will return False.
 
 You can create a dark mode switch listener daemon thread with `darkdetect.listener` and pass a callback function. The function will be called with string "Dark" or "Light" when the OS switches the dark mode setting.
 
@@ -61,3 +64,4 @@ pip install darkdetect[macos-listener]
 - On macOS, detection of the dark menu bar and dock option (available from macOS 10.10) is not supported.
 - [Details](https://stackoverflow.com/questions/25207077/how-to-detect-if-os-x-is-in-dark-mode) on the detection method used on macOS.
 - [Details](https://askubuntu.com/questions/1261366/detecting-dark-mode#comment2132694_1261366) on the experimental detection method used on Linux.
+
