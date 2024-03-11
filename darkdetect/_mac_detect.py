@@ -22,7 +22,7 @@ except ModuleNotFoundError:
 
 try:
     # macOS Big Sur+ use "a built-in dynamic linker cache of all system-provided libraries"
-    appkit = ctypes.cdll.LoadLibrary('AppKit.framework/AppKit')
+    appkit = ctypes.cdll.LoadLibrary('AppKit.framework')
     objc = ctypes.cdll.LoadLibrary('libobjc.dylib')
 except OSError:
     # revert to full path for older OS versions and hardened programs
